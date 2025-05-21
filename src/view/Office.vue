@@ -387,6 +387,7 @@ export default {
 					this.$emit('update:loaded', true)
 					FilesAppIntegration.initAfterReady()
 				} else if (args.Status === 'Document_Loaded') {
+					this.sendPostMessage('Hide_Menu_Item', { id: 'help' })
 					this.documentReady()
 
 					if (loadState('richdocuments', 'open_local_editor', true) && !this.isEmbedded) {
