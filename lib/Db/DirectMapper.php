@@ -17,16 +17,12 @@ class DirectMapper extends QBMapper {
 	/** @var int Lifetime of a token is 10 minutes */
 	public const TOKEN_TTL = 600;
 
-	protected ISecureRandom $random;
-	protected ITimeFactory $timeFactory;
-
-	public function __construct(IDBConnection $db,
-		ISecureRandom $random,
-		ITimeFactory $timeFactory) {
+	public function __construct(
+		IDBConnection $db,
+		protected ISecureRandom $random,
+		protected ITimeFactory $timeFactory,
+	) {
 		parent::__construct($db, 'richdocuments_direct', Direct::class);
-
-		$this->random = $random;
-		$this->timeFactory = $timeFactory;
 	}
 
 	/**
@@ -35,13 +31,13 @@ class DirectMapper extends QBMapper {
 	 * @param int $destination
 	 * @return Direct
 	 */
-	public function newDirect($uid, $fileid, $destination = null, $share = null, $initiatorHost = null, $initiatorToken = null) {
+	public function newDirect($uid, $fileid, $template = null, $share = null, $initiatorHost = null, $initiatorToken = null) {
 		$direct = new Direct();
 		$direct->setUid($uid);
 		$direct->setFileid($fileid);
 		$direct->setToken($this->random->generate(64, ISecureRandom::CHAR_DIGITS . ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_UPPER));
 		$direct->setTimestamp($this->timeFactory->getTime());
-		$direct->setTemplateDestination($destination);
+		$direct->setTemplateId($template);
 		$direct->setShare($share);
 		$direct->setInitiatorHost($initiatorHost);
 		$direct->setInitiatorToken($initiatorToken);
@@ -66,7 +62,7 @@ class DirectMapper extends QBMapper {
 			}
 
 			return $direct;
-		} catch (\Exception $e) {
+		} catch (\Exception) {
 		}
 
 		throw new DoesNotExistException('No asset for token found');

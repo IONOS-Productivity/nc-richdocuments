@@ -7,11 +7,14 @@ namespace OCA\Richdocuments\Controller;
 
 use OCA\Richdocuments\AppConfig;
 use OCA\Richdocuments\Capabilities;
+use OCA\Richdocuments\Db\WopiMapper;
 use OCA\Richdocuments\Service\CapabilitiesService;
 use OCA\Richdocuments\Service\ConnectivityService;
 use OCA\Richdocuments\Service\DemoService;
 use OCA\Richdocuments\Service\DiscoveryService;
 use OCA\Richdocuments\Service\FontService;
+use OCA\Richdocuments\Service\SettingsService;
+use OCA\Richdocuments\TemplateManager;
 use OCA\Richdocuments\UploadException;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
@@ -43,7 +46,8 @@ class SettingsController extends Controller {
 		'application/vnd.ms-opentype',
 	];
 
-	public function __construct($appName,
+	public function __construct(
+		$appName,
 		IRequest $request,
 		private IL10N $l10n,
 		private AppConfig $appConfig,
@@ -53,8 +57,12 @@ class SettingsController extends Controller {
 		private CapabilitiesService $capabilitiesService,
 		private DemoService $demoService,
 		private FontService $fontService,
+		private SettingsService $settingsService,
 		private LoggerInterface $logger,
-		private ?string $userId
+		private IURLGenerator $urlGenerator,
+		private WopiMapper $wopiMapper,
+		private ?string $userId,
+		private TemplateManager $templateManager,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -95,7 +103,6 @@ class SettingsController extends Controller {
 	public function getSettings(): JSONResponse {
 		return new JSONResponse($this->getSettingsData());
 	}
-
 	private function getSettingsData(): array {
 		return [
 			'wopi_url' => $this->appConfig->getCollaboraUrlInternal(),
@@ -109,6 +116,10 @@ class SettingsController extends Controller {
 			'product_name' => $this->capabilitiesService->getServerProductName(),
 			'product_version' => $this->capabilitiesService->getProductVersion(),
 			'product_hash' => $this->capabilitiesService->getProductHash(),
+			'esignature_base_url' => $this->appConfig->getAppValue('esignature_base_url'),
+			'esignature_client_id' => $this->appConfig->getAppValue('esignature_client_id'),
+			'esignature_secret' => $this->appConfig->getAppValue('esignature_secret'),
+			'userId' => $this->userId
 		];
 	}
 
@@ -120,7 +131,10 @@ class SettingsController extends Controller {
 		?string $use_groups,
 		?string $doc_format,
 		?string $external_apps,
-		?string $canonical_webroot
+		?string $canonical_webroot,
+		?string $esignature_base_url,
+		?string $esignature_client_id,
+		?string $esignature_secret,
 	): JSONResponse {
 		if ($wopi_url !== null) {
 			$this->appConfig->setAppValue('wopi_url', $wopi_url);
@@ -157,6 +171,18 @@ class SettingsController extends Controller {
 			$this->appConfig->setAppValue('canonical_webroot', $canonical_webroot);
 		}
 
+		if ($esignature_base_url !== null) {
+			$this->appConfig->setAppValue('esignature_base_url', $esignature_base_url);
+		}
+
+		if ($esignature_client_id !== null) {
+			$this->appConfig->setAppValue('esignature_client_id', $esignature_client_id);
+		}
+
+		if ($esignature_secret !== null) {
+			$this->appConfig->setAppValue('esignature_secret', $esignature_secret);
+		}
+
 		try {
 			$output = new NullOutput();
 			$this->connectivityService->testDiscovery($output);
@@ -187,6 +213,7 @@ class SettingsController extends Controller {
 			'watermark_shareAll',
 			'watermark_shareRead',
 			'watermark_shareDisabledDownload',
+			'watermark_shareTalkPublic',
 			'watermark_linkSecure',
 			'watermark_linkRead',
 			'watermark_linkAll',
@@ -245,7 +272,7 @@ class SettingsController extends Controller {
 		if ($templateFolder !== null) {
 			try {
 				$this->config->setUserValue($this->userId, 'richdocuments', 'templateFolder', $templateFolder);
-			} catch (PreConditionNotMetException $e) {
+			} catch (PreConditionNotMetException) {
 				$message = $this->l10n->t('Error when saving');
 				$status = 'error';
 			}
@@ -253,6 +280,31 @@ class SettingsController extends Controller {
 		if ($zoteroAPIKeyInput !== null) {
 			try {
 				$this->config->setUserValue($this->userId, 'richdocuments', 'zoteroAPIKey', $zoteroAPIKeyInput);
+			} catch (PreConditionNotMetException) {
+				$message = $this->l10n->t('Error when saving');
+				$status = 'error';
+			}
+		}
+
+		if ($documentSigningCertInput !== null) {
+			try {
+				$this->config->setUserValue($this->userId, 'richdocuments', 'documentSigningCert', $documentSigningCertInput);
+			} catch (PreConditionNotMetException $e) {
+				$message = $this->l10n->t('Error when saving');
+				$status = 'error';
+			}
+		}
+		if ($documentSigningKeyInput !== null) {
+			try {
+				$this->config->setUserValue($this->userId, 'richdocuments', 'documentSigningKey', $documentSigningKeyInput);
+			} catch (PreConditionNotMetException $e) {
+				$message = $this->l10n->t('Error when saving');
+				$status = 'error';
+			}
+		}
+		if ($documentSigningCaInput !== null) {
+			try {
+				$this->config->setUserValue($this->userId, 'richdocuments', 'documentSigningCa', $documentSigningCaInput);
 			} catch (PreConditionNotMetException $e) {
 				$message = $this->l10n->t('Error when saving');
 				$status = 'error';
@@ -323,9 +375,7 @@ class SettingsController extends Controller {
 	public function getJsonFontList() {
 		$files = $this->fontService->getFontFiles();
 		$etags = array_map(
-			static function (ISimpleFile $f) {
-				return $f->getETag();
-			},
+			static fn (ISimpleFile $f) => $f->getETag(),
 			$files
 		);
 		$etag = md5(implode(',', $etags));
@@ -363,7 +413,7 @@ class SettingsController extends Controller {
 				Http::STATUS_OK,
 				['Content-Type' => $fontFile->getMimeType(), 'Etag' => $etag]
 			);
-		} catch (NotFoundException $e) {
+		} catch (NotFoundException) {
 			return new DataDisplayResponse('', Http::STATUS_NOT_FOUND);
 		}
 	}
@@ -385,8 +435,25 @@ class SettingsController extends Controller {
 				Http::STATUS_OK,
 				['Content-Type' => 'image/png']
 			);
-		} catch (NotFoundException $e) {
+		} catch (NotFoundException) {
 			return new DataDisplayResponse('', Http::STATUS_NOT_FOUND);
+		}
+	}
+
+	/**
+	 * @NoAdminRequired
+	 *
+	 * @param string $type - Type is 'admin' or 'user'
+	 * @return DataResponse
+	 */
+	public function generateIframeToken(string $type): DataResponse {
+		try {
+			$response = $this->settingsService->generateIframeToken($type, $this->userId);
+			return new DataResponse($response);
+		} catch (\Exception $e) {
+			return new DataResponse([
+				'message' => 'Settings token not generated.'
+			], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -430,6 +497,49 @@ class SettingsController extends Controller {
 		} catch (UploadException|NotPermittedException $e) {
 			$this->logger->error('Upload error', ['exception' => $e]);
 			return new JSONResponse(['error' => 'Upload error'], Http::STATUS_BAD_REQUEST);
+		}
+	}
+
+	/**
+	 * @param string $type
+	 * @param string $token
+	 * @param string $category
+	 * @param string $name
+	 *
+	 * @return DataDisplayResponse
+	 *
+	 * @NoAdminRequired
+	 * @PublicPage
+	 * @NoCSRFRequired
+	 **/
+	public function getSettingsFile(string $type, string $token, string $category, string $name) {
+		try {
+			$wopi = $this->wopiMapper->getWopiForToken($token);
+			$userId = $wopi->getEditorUid() ?: $wopi->getOwnerUid();
+			if ($type === 'userconfig') {
+				$type = $type . '/' . $userId;
+			}
+
+			// special handling for presentation template
+			if ($category === 'template') {
+				$this->templateManager->setUserId($userId);
+				$templateId = $this->request->getParam('identifier');
+				$systemFile = $this->templateManager->get((int)$templateId);
+			} else {
+				$systemFile = $this->settingsService->getSettingsFile($type, $category, $name);
+			}
+
+			return new DataDisplayResponse(
+				$systemFile->getContent(),
+				200,
+				[
+					'Content-Type' => $systemFile->getMimeType() ?: 'application/octet-stream'
+				]
+			);
+		} catch (NotFoundException $e) {
+			return new DataDisplayResponse('File not found.', 404);
+		} catch (\Exception $e) {
+			return new DataDisplayResponse('Something went wrong', 500);
 		}
 	}
 

@@ -6,6 +6,7 @@
 namespace OCA\Richdocuments\Db;
 
 use OCP\AppFramework\Db\Entity;
+use OCP\DB\Types;
 
 /**
  * @package OCA\Richdocuments\Db
@@ -67,6 +68,11 @@ class Wopi extends Entity implements \JsonSerializable {
 	 */
 	public const TOKEN_TYPE_INITIATOR = 4;
 
+	/*
+	 * Temporary token that is used for authentication while communication between cool iframe and user/admin settings
+	 */
+	public const TOKEN_TYPE_SETTING_AUTH = 5;
+
 	/** @var string */
 	protected $ownerUid;
 
@@ -119,20 +125,20 @@ class Wopi extends Entity implements \JsonSerializable {
 	protected $tokenType = 0;
 
 	public function __construct() {
-		$this->addType('ownerUid', 'string');
-		$this->addType('editorUid', 'string');
-		$this->addType('fileid', 'int');
-		$this->addType('version', 'int');
-		$this->addType('canwrite', 'bool');
-		$this->addType('serverHost', 'string');
-		$this->addType('token', 'string');
-		$this->addType('expiry', 'int');
-		$this->addType('guestDisplayname', 'string');
-		$this->addType('templateDestination', 'int');
-		$this->addType('templateId', 'int');
-		$this->addType('hideDownload', 'bool');
-		$this->addType('direct', 'bool');
-		$this->addType('tokenType', 'int');
+		$this->addType('ownerUid', Types::STRING);
+		$this->addType('editorUid', Types::STRING);
+		$this->addType('fileid', Types::INTEGER);
+		$this->addType('version', Types::INTEGER);
+		$this->addType('canwrite', Types::BOOLEAN);
+		$this->addType('serverHost', Types::STRING);
+		$this->addType('token', Types::STRING);
+		$this->addType('expiry', Types::INTEGER);
+		$this->addType('guestDisplayname', Types::STRING);
+		$this->addType('templateDestination', Types::INTEGER);
+		$this->addType('templateId', Types::INTEGER);
+		$this->addType('hideDownload', Types::BOOLEAN);
+		$this->addType('direct', Types::BOOLEAN);
+		$this->addType('tokenType', Types::INTEGER);
 	}
 
 	public function hasTemplateId() {
@@ -168,7 +174,7 @@ class Wopi extends Entity implements \JsonSerializable {
 		$reflection = new \ReflectionClass($this);
 		$json = [];
 		foreach ($properties as $property => $value) {
-			if (strpos($property, '_') !== 0 && $reflection->hasProperty($property)) {
+			if (!str_starts_with($property, '_') && $reflection->hasProperty($property)) {
 				$propertyReflection = $reflection->getProperty($property);
 				if (!$propertyReflection->isPrivate()) {
 					$json[$property] = $this->getter($property);

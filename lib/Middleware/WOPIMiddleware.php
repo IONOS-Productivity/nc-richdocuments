@@ -32,7 +32,8 @@ class WOPIMiddleware extends Middleware {
 		private IConfig $config,
 		private IRequest $request,
 		private WopiMapper $wopiMapper,
-		private LoggerInterface $logger
+		private LoggerInterface $logger,
+		private bool $isWOPIRequest = false,
 	) {
 	}
 
@@ -55,6 +56,10 @@ class WOPIMiddleware extends Middleware {
 			return;
 		}
 
+		if (strpos($this->request->getRequestUri(), 'wopi/settings/upload') !== false) {
+			return;
+		}
+
 		try {
 			$fileId = $this->request->getParam('fileId');
 			$accessToken = $this->request->getParam('access_token');
@@ -74,6 +79,8 @@ class WOPIMiddleware extends Middleware {
 			$this->logger->error('Failed to validate WOPI access', [ 'exception' => $e ]);
 			throw new NotPermittedException();
 		}
+
+		$this->isWOPIRequest = true;
 	}
 
 	public function afterException($controller, $methodName, \Exception $exception): Response {
@@ -105,5 +112,9 @@ class WOPIMiddleware extends Middleware {
 
 		$this->logger->warning('WOPI request denied from ' . $userIp . ' as it does not match the configured ranges: ' . implode(', ', $allowedRanges));
 		return false;
+	}
+
+	public function isWOPIRequest(): bool {
+		return $this->isWOPIRequest;
 	}
 }

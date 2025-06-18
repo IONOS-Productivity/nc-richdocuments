@@ -127,22 +127,22 @@ export default {
 $modal-padding: calc(var(--default-grid-baseline) * 4);
 
 .modal__content {
-	padding: $modal-padding;
+  padding: $modal-padding;
 
-	h3 {
-		margin: 0;
-		display: flex;
-		align-items: center;
-	}
+  h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+  }
 
-	p, fieldset {
-		margin: 10px 0;
-	}
+  p, fieldset {
+    margin: 10px 0;
+  }
 
-	.modal__buttons {
-		margin-top: $modal-padding;
-		display: flex;
-		justify-content: end;
-	}
+  .modal__buttons {
+    margin-top: $modal-padding;
+    display: flex;
+    justify-content: end;
+  }
 }
 </style>

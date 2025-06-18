@@ -16,13 +16,20 @@ use OCA\Richdocuments\Exceptions\ExpiredTokenException;
 use OCA\Richdocuments\Exceptions\UnknownTokenException;
 use OCA\Richdocuments\Helper;
 use OCA\Richdocuments\PermissionManager;
+use OCA\Richdocuments\Service\CapabilitiesService;
 use OCA\Richdocuments\Service\FederationService;
+use OCA\Richdocuments\Service\SettingsService;
 use OCA\Richdocuments\Service\UserScopeService;
+use OCA\Richdocuments\TaskProcessingManager;
 use OCA\Richdocuments\TemplateManager;
 use OCA\Richdocuments\TokenManager;
+use OCA\Richdocuments\WOPI\SettingsUrl;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\FrontpageRoute;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\AppFramework\QueryException;
@@ -32,7 +39,6 @@ use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\GenericFileException;
-use OCP\Files\InvalidPathException;
 use OCP\Files\IRootFolder;
 use OCP\Files\Lock\ILock;
 use OCP\Files\Lock\ILockManager;
@@ -82,25 +88,23 @@ class WopiController extends Controller {
 		private IEncryptionManager $encryptionManager,
 		private IGroupManager $groupManager,
 		private ILockManager $lockManager,
-		private IEventDispatcher $eventDispatcher
+		private IEventDispatcher $eventDispatcher,
+		private TaskProcessingManager $taskProcessingManager,
+		private SettingsService $settingsService,
+		private CapabilitiesService $capabilitiesService,
+		private Helper $helper,
 	) {
 		parent::__construct($appName, $request);
 	}
 
 	/**
 	 * Returns general info about a file.
-	 *
-	 * @NoAdminRequired
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 *
-	 * @param string $fileId
-	 * @param string $access_token
-	 * @return JSONResponse
-	 * @throws InvalidPathException
-	 * @throws NotFoundException
 	 */
-	public function checkFileInfo($fileId, $access_token) {
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
+	#[FrontpageRoute(verb: 'GET', url: 'wopi/files/{fileId}')]
+	public function checkFileInfo(string $fileId, string $access_token): JSONResponse {
 		try {
 			[$fileId, , $version] = Helper::parseFileId($fileId);
 
@@ -109,10 +113,7 @@ class WopiController extends Controller {
 			if (!($file instanceof File)) {
 				throw new NotFoundException('No valid file found for ' . $fileId);
 			}
-		} catch (NotFoundException $e) {
-			$this->logger->debug($e->getMessage(), ['exception' => $e]);
-			return new JSONResponse([], Http::STATUS_FORBIDDEN);
-		} catch (UnknownTokenException $e) {
+		} catch (NotFoundException|UnknownTokenException $e) {
 			$this->logger->debug($e->getMessage(), ['exception' => $e]);
 			return new JSONResponse([], Http::STATUS_FORBIDDEN);
 		} catch (ExpiredTokenException $e) {
@@ -128,6 +129,11 @@ class WopiController extends Controller {
 		$user = $this->userManager->get($wopi->getEditorUid());
 		$userDisplayName = $user !== null && !$isPublic ? $user->getDisplayName() : $wopi->getGuestDisplayname();
 		$isVersion = $version !== '0';
+		$isSmartPickerEnabled = (bool)$wopi->getCanwrite() && !$isPublic && !$wopi->getDirect();
+		$isTaskProcessingEnabled = $isSmartPickerEnabled && $this->taskProcessingManager->isTaskProcessingEnabled();
+
+		$share = $this->getShareForWopiToken($wopi, $file);
+		$shouldUseSecureView = $this->permissionManager->shouldWatermark($file, $wopi->getEditorUid(), $share);
 
 		// If the file is locked manually by a user we want to open it read only for all others
 		$canWriteThroughLock = true;
@@ -137,17 +143,20 @@ class WopiController extends Controller {
 		} catch (NoLockProviderException|PreConditionNotMetException) {
 		}
 
+		$userId = !$isPublic ? $wopi->getEditorUid() : $guestUserId;
+
+
 		$response = [
 			'BaseFileName' => $file->getName(),
 			'Size' => $file->getSize(),
 			'Version' => $version,
-			'UserId' => !$isPublic ? $wopi->getEditorUid() : $guestUserId,
+			'UserId' => $userId,
 			'OwnerId' => $wopi->getOwnerUid(),
 			'UserFriendlyName' => $userDisplayName,
 			'UserExtraInfo' => [],
 			'UserPrivateInfo' => [],
 			'UserCanWrite' => $canWriteThroughLock && (bool)$wopi->getCanwrite(),
-			'UserCanNotWriteRelative' => $isPublic || $this->encryptionManager->isEnabled() || $wopi->getHideDownload() || $wopi->isRemoteToken(),
+			'UserCanNotWriteRelative' => $isPublic || $this->encryptionManager->isEnabled() || $wopi->getHideDownload() || $wopi->isRemoteToken() || $shouldUseSecureView,
 			'PostMessageOrigin' => $wopi->getServerHost(),
 			'LastModifiedTime' => Helper::toISO8601($file->getMTime()),
 			'SupportsRename' => !$isVersion && !$wopi->isRemoteToken(),
@@ -157,17 +166,27 @@ class WopiController extends Controller {
 			'EnableShare' => $file->isShareable() && !$isVersion && !$isPublic,
 			'HideUserList' => '',
 			'EnableOwnerTermination' => $wopi->getCanwrite() && !$isPublic,
-			'DisablePrint' => $wopi->getHideDownload(),
-			'DisableExport' => $wopi->getHideDownload(),
-			'DisableCopy' => $wopi->getHideDownload(),
-			'HideExportOption' => $wopi->getHideDownload(),
-			'HidePrintOption' => $wopi->getHideDownload(),
+			'DisablePrint' => $wopi->getHideDownload() || $shouldUseSecureView,
+			'DisableExport' => $wopi->getHideDownload() || $shouldUseSecureView,
+			'DisableCopy' => $wopi->getHideDownload() || $shouldUseSecureView,
+			'HideExportOption' => $wopi->getHideDownload() || $shouldUseSecureView,
+			'HidePrintOption' => $wopi->getHideDownload() || $shouldUseSecureView,
 			'DownloadAsPostMessage' => $wopi->getDirect(),
 			'SupportsLocks' => $this->lockManager->isLockProviderAvailable(),
 			'IsUserLocked' => $this->permissionManager->userIsFeatureLocked($wopi->getEditorUid()),
-			'EnableRemoteLinkPicker' => (bool)$wopi->getCanwrite() && !$isPublic && !$wopi->getDirect(),
+			'EnableRemoteLinkPicker' => $isSmartPickerEnabled,
+			'EnableRemoteAIContent' => $isTaskProcessingEnabled,
 			'HasContentRange' => true,
+			'ServerPrivateInfo' => [],
 		];
+
+		if ($this->capabilitiesService->hasSettingIframeSupport()) {
+			$token = $this->generateSettingToken($userId);
+			if (!$isPublic) {
+				$response['UserSettings'] = $this->generateSettings($token, 'userconfig', $userId);
+			}
+			$response['SharedSettings'] = $this->generateSettings($token, 'systemconfig');
+		}
 
 		$enableZotero = $this->config->getAppValue(Application::APPNAME, 'zoteroEnabled', 'yes') === 'yes';
 		if (!$isPublic && $enableZotero) {
@@ -182,25 +201,43 @@ class WopiController extends Controller {
 			$response['UserPrivateInfo']['SignatureKey'] = $documentSigningKey;
 			$documentSigningCa = $this->config->getUserValue($wopi->getEditorUid(), 'richdocuments', 'documentSigningCa', '');
 			$response['UserPrivateInfo']['SignatureCa'] = $documentSigningCa;
+
+			$eSignatureBaseUrl = $this->config->getAppValue(Application::APPNAME, 'esignature_base_url');
+			$eSignatureClientId = $this->config->getAppValue(Application::APPNAME, 'esignature_client_id');
+			$eSignatureSecret = $this->config->getAppValue(Application::APPNAME, 'esignature_secret');
+			if ($eSignatureBaseUrl === '' && $eSignatureClientId !== '' && $eSignatureSecret !== '') {
+				// If the client ID & secret is set, then assume a production base URL.
+				$eSignatureBaseUrl = 'https://id.eideasy.com';
+			}
+			if ($eSignatureBaseUrl !== '') {
+				$response['ServerPrivateInfo']['ESignatureBaseUrl'] = $eSignatureBaseUrl;
+			}
+			if ($eSignatureClientId !== '') {
+				$response['ServerPrivateInfo']['ESignatureClientId'] = $eSignatureClientId;
+			}
+			if ($eSignatureSecret !== '') {
+				$response['ServerPrivateInfo']['ESignatureSecret'] = $eSignatureSecret;
+			}
 		}
 		if ($wopi->hasTemplateId()) {
 			$response['TemplateSource'] = $this->getWopiUrlForTemplate($wopi);
 		}
 
-		$share = $this->getShareForWopiToken($wopi);
-		if ($this->permissionManager->shouldWatermark($file, $wopi->getEditorUid(), $share)) {
+		if ($shouldUseSecureView) {
 			$email = $user !== null && !$isPublic ? $user->getEMailAddress() : '';
+			$currentDateTime = new \DateTime(
+				'now',
+				new \DateTimeZone($this->config->getSystemValueString('default_timezone', 'UTC'))
+			);
 			$replacements = [
 				'userId' => $wopi->getEditorUid(),
-				'date' => (new \DateTime())->format('Y-m-d H:i:s'),
+				'date' => $currentDateTime->format('Y-m-d H:i:s'),
 				'themingName' => \OC::$server->getThemingDefaults()->getName(),
 				'userDisplayName' => $userDisplayName,
 				'email' => $email,
 			];
 			$watermarkTemplate = $this->appConfig->getAppValue('watermark_text');
-			$response['WatermarkText'] = preg_replace_callback('/{(.+?)}/', function ($matches) use ($replacements) {
-				return $replacements[$matches[1]];
-			}, $watermarkTemplate);
+			$response['WatermarkText'] = preg_replace_callback('/{(.+?)}/', fn ($matches) => $replacements[$matches[1]], $watermarkTemplate);
 		}
 
 		$user = $this->userManager->get($wopi->getEditorUid());
@@ -233,7 +270,7 @@ class WopiController extends Controller {
 		$response = array_merge($response, $this->appConfig->getWopiOverride());
 
 		$this->eventDispatcher->dispatchTyped(new DocumentOpenedEvent(
-			$user ? $user->getUID() : null,
+			$user?->getUID(),
 			$file
 		));
 
@@ -283,20 +320,12 @@ class WopiController extends Controller {
 
 	/**
 	 * Given an access token and a fileId, returns the contents of the file.
-	 * Expects a valid token in access_token parameter.
-	 *
-	 * @PublicPage
-	 * @NoCSRFRequired
-	 *
-	 * @param string $fileId
-	 * @param string $access_token
-	 * @return Http\Response
-	 * @throws NotFoundException
-	 * @throws NotPermittedException
-	 * @throws LockedException
 	 */
-	public function getFile($fileId,
-		$access_token) {
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
+	#[FrontpageRoute(verb: 'GET', url: 'wopi/files/{fileId}/contents')]
+	public function getFile(string $fileId, string $access_token): JSONResponse|StreamResponse|Http\Response {
 		[$fileId, , $version] = Helper::parseFileId($fileId);
 
 		try {
@@ -372,19 +401,124 @@ class WopiController extends Controller {
 		}
 	}
 
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
+	#[FrontpageRoute(verb: 'GET', url: 'wopi/settings')]
+	public function getSettings(string $type, string $access_token): JSONResponse {
+		if (empty($type)) {
+			return new JSONResponse(['error' => 'Invalid type parameter'], Http::STATUS_BAD_REQUEST);
+		}
+
+		try {
+			$wopi = $this->wopiMapper->getWopiForToken($access_token);
+			if ($wopi->getTokenType() !== Wopi::TOKEN_TYPE_SETTING_AUTH) {
+				return new JSONResponse(['error' => 'Invalid token type'], Http::STATUS_BAD_REQUEST);
+			}
+
+			$isPublic = empty($wopi->getEditorUid());
+			$guestUserId = 'Guest-' . \OC::$server->getSecureRandom()->generate(8);
+			$userId = !$isPublic ? $wopi->getEditorUid() : $guestUserId;
+
+			$userConfig = $this->settingsService->generateSettingsConfig($type, $userId);
+			return new JSONResponse($userConfig, Http::STATUS_OK);
+		} catch (UnknownTokenException|ExpiredTokenException $e) {
+			$this->logger->debug($e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(['error' => 'Unauthorized'], Http::STATUS_UNAUTHORIZED);
+		} catch (\Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(['error' => 'Internal Server Error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
+	#[FrontpageRoute(verb: 'POST', url: 'wopi/settings/upload')]
+	public function uploadSettingsFile(string $fileId, string $access_token): JSONResponse {
+		try {
+			$wopi = $this->wopiMapper->getWopiForToken($access_token);
+
+			$userId = $wopi->getEditorUid();
+
+			if (empty($userId)) {
+				throw new \Exception('UserID is empty');
+			}
+
+			$content = fopen('php://input', 'rb');
+			if (!$content) {
+				throw new \Exception('Failed to read input stream.');
+			}
+
+			$fileContent = stream_get_contents($content);
+			fclose($content);
+
+			// Use the fileId as a file path URL (e.g., "/settings/systemconfig/wordbook/en_US%20(1).dic")
+			$settingsUrl = new SettingsUrl($fileId);
+			$result = $this->settingsService->uploadFile($settingsUrl, $fileContent, $userId);
+
+			return new JSONResponse([
+				'status' => 'success',
+				'filename' => $settingsUrl->getFileName(),
+				'details' => $result,
+			], Http::STATUS_OK);
+
+		} catch (UnknownTokenException $e) {
+			$this->logger->debug($e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(['error' => 'Invalid token'], Http::STATUS_FORBIDDEN);
+		} catch (\Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
+	#[FrontpageRoute(verb: 'DELETE', url: 'wopi/settings')]
+	public function deleteSettingsFile(string $fileId, string $access_token): JSONResponse {
+		try {
+			$wopi = $this->wopiMapper->getWopiForToken($access_token);
+			if ($wopi->getTokenType() !== Wopi::TOKEN_TYPE_SETTING_AUTH) {
+				return new JSONResponse(['error' => 'Invalid token type'], Http::STATUS_FORBIDDEN);
+			}
+
+			// Parse the dynamic file path from `fileId`, e.g. "/settings/systemconfig/wordbook/en_US (1).dic"
+			$settingsUrl = new SettingsUrl($fileId);
+			$type = $settingsUrl->getType();
+			$category = $settingsUrl->getCategory();
+			$fileName = $settingsUrl->getFileName();
+			$userId = $wopi->getEditorUid();
+
+			$this->settingsService->deleteSettingsFile($type, $category, $fileName, $userId);
+
+			return new JSONResponse([
+				'status' => 'success',
+				'message' => "File '$fileName' deleted from '$category' of type '$type'."
+			], Http::STATUS_OK);
+		} catch (UnknownTokenException $e) {
+			$this->logger->debug($e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(['error' => 'Invalid token'], Http::STATUS_FORBIDDEN);
+		} catch (NotFoundException $e) {
+			return new JSONResponse(['error' => 'File not found'], Http::STATUS_NOT_FOUND);
+		} catch (NotPermittedException $e) {
+			return new JSONResponse(['error' => 'Not permitted'], Http::STATUS_FORBIDDEN);
+		} catch (\Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(['error' => 'Internal Server Error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}
+
+
 	/**
 	 * Given an access token and a fileId, replaces the files with the request body.
 	 * Expects a valid token in access_token parameter.
-	 *
-	 * @PublicPage
-	 * @NoCSRFRequired
-	 *
-	 * @param string $fileId
-	 * @param string $access_token
-	 * @return JSONResponse
 	 */
-	public function putFile($fileId,
-		$access_token) {
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
+	#[FrontpageRoute(verb: 'POST', url: 'wopi/files/{fileId}/contents')]
+	public function putFile(string $fileId, string $access_token): JSONResponse {
 		[$fileId, , ] = Helper::parseFileId($fileId);
 		$isPutRelative = ($this->request->getHeader('X-WOPI-Override') === 'PUT_RELATIVE');
 
@@ -424,7 +558,7 @@ class WopiController extends Controller {
 					return new JSONResponse([], Http::STATUS_NOT_FOUND);
 				}
 				$suggested = $this->request->getHeader('X-WOPI-SuggestedTarget');
-				$suggested = mb_convert_encoding($suggested, 'utf-8', 'utf-7');
+				$suggested = (string)mb_convert_encoding($suggested, 'utf-8', 'utf-7');
 
 				if ($suggested[0] === '.') {
 					$path = dirname($file->getPath()) . '/New File' . $suggested;
@@ -473,9 +607,7 @@ class WopiController extends Controller {
 				if ($freespace >= 0 && $contentLength > $freespace) {
 					throw new \Exception('Not enough storage');
 				}
-				$this->wrappedFilesystemOperation($wopi, function () use ($file, $content) {
-					return $file->putContent($content);
-				});
+				$this->wrappedFilesystemOperation($wopi, fn () => $file->putContent($content));
 			} catch (LockedException $e) {
 				$this->logger->error($e->getMessage(), ['exception' => $e]);
 				return new JSONResponse(['message' => 'File locked'], Http::STATUS_INTERNAL_SERVER_ERROR);
@@ -507,15 +639,11 @@ class WopiController extends Controller {
 	 * handles both saving and saving as.* Given an access token and a fileId, replaces the files with the request body.
 	 *
 	 * FIXME Cleanup this code as is a lot of shared logic between putFile and putRelativeFile
-	 *
-	 * @PublicPage
-	 * @NoCSRFRequired
-	 *
-	 * @param string $fileId
-	 * @param string $access_token
-	 * @return JSONResponse
-	 * @throws DoesNotExistException
 	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
+	#[FrontpageRoute(verb: 'POST', url: 'wopi/files/{fileId}')]
 	public function postFile(string $fileId, string $access_token): JSONResponse {
 		try {
 			$wopiOverride = $this->request->getHeader('X-WOPI-Override');
@@ -596,7 +724,7 @@ class WopiController extends Controller {
 					$this->getFileForWopiToken($wopi),
 					ILock::TYPE_APP,
 					Application::APPNAME
-				), function () use (&$file, $path) {
+				), function () use (&$file, $path): void {
 					$file = $file->move($path);
 				});
 			} else {
@@ -624,10 +752,8 @@ class WopiController extends Controller {
 			$this->userScopeService->setFilesystemScope($editor);
 
 			try {
-				$this->wrappedFilesystemOperation($wopi, function () use ($file, $content) {
-					return $file->putContent($content);
-				});
-			} catch (LockedException $e) {
+				$this->wrappedFilesystemOperation($wopi, fn () => $file->putContent($content));
+			} catch (LockedException) {
 				return new JSONResponse(['message' => 'File locked'], Http::STATUS_INTERNAL_SERVER_ERROR);
 			}
 
@@ -665,7 +791,7 @@ class WopiController extends Controller {
 				Application::APPNAME
 			));
 			return new JSONResponse();
-		} catch (NoLockProviderException|PreConditionNotMetException $e) {
+		} catch (NoLockProviderException|PreConditionNotMetException) {
 			return new JSONResponse([], Http::STATUS_BAD_REQUEST);
 		} catch (OwnerLockedException $e) {
 			// If a file is manually locked by a user we want to all this user to still perform a WOPI lock and write
@@ -674,7 +800,7 @@ class WopiController extends Controller {
 			}
 
 			return new JSONResponse([], Http::STATUS_LOCKED);
-		} catch (\Exception $e) {
+		} catch (\Exception) {
 			return new JSONResponse([], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -687,14 +813,14 @@ class WopiController extends Controller {
 				Application::APPNAME
 			));
 			return new JSONResponse();
-		} catch (NoLockProviderException|PreConditionNotMetException $e) {
+		} catch (NoLockProviderException|PreConditionNotMetException) {
 			$locks = $this->lockManager->getLocks($wopi->getFileid());
 			$canWriteThroughLock = count($locks) > 0 && $locks[0]->getType() === ILock::TYPE_USER && $locks[0]->getOwner() !== $wopi->getEditorUid() ? false : true;
 			if ($canWriteThroughLock) {
 				return new JSONResponse();
 			}
 			return new JSONResponse([], Http::STATUS_BAD_REQUEST);
-		} catch (\Exception $e) {
+		} catch (\Exception) {
 			return new JSONResponse([], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -707,11 +833,11 @@ class WopiController extends Controller {
 				Application::APPNAME
 			));
 			return new JSONResponse();
-		} catch (NoLockProviderException|PreConditionNotMetException $e) {
+		} catch (NoLockProviderException|PreConditionNotMetException) {
 			return new JSONResponse([], Http::STATUS_BAD_REQUEST);
-		} catch (OwnerLockedException $e) {
+		} catch (OwnerLockedException) {
 			return new JSONResponse([], Http::STATUS_LOCKED);
-		} catch (\Exception $e) {
+		} catch (\Exception) {
 			return new JSONResponse([], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -728,7 +854,7 @@ class WopiController extends Controller {
 	 * @throws ShareNotFound
 	 */
 	protected function wrappedFilesystemOperation(Wopi $wopi, callable $filesystemOperation): void {
-		$retryOperation = function () use ($filesystemOperation) {
+		$retryOperation = function () use ($filesystemOperation): void {
 			$this->retryOperation($filesystemOperation);
 		};
 		try {
@@ -737,7 +863,7 @@ class WopiController extends Controller {
 				ILock::TYPE_APP,
 				Application::APPNAME
 			), $retryOperation);
-		} catch (NoLockProviderException $e) {
+		} catch (NoLockProviderException) {
 			$retryOperation();
 		}
 	}
@@ -797,17 +923,19 @@ class WopiController extends Controller {
 
 		// Workaround to always open files with edit permissions if multiple occurrences of
 		// the same file id are in the user home, ideally we should also track the path of the file when opening
-		usort($files, function (Node $a, Node $b) {
-			return ($b->getPermissions() & Constants::PERMISSION_UPDATE) <=> ($a->getPermissions() & Constants::PERMISSION_UPDATE);
-		});
+		usort($files, fn (Node $a, Node $b) => ($b->getPermissions() & Constants::PERMISSION_UPDATE) <=> ($a->getPermissions() & Constants::PERMISSION_UPDATE));
 
 		return array_shift($files);
 	}
 
-	private function getShareForWopiToken(Wopi $wopi): ?IShare {
+	private function getShareForWopiToken(Wopi $wopi, File $file): ?IShare {
 		try {
-			return $wopi->getShare() ? $this->shareManager->getShareByToken($wopi->getShare()) : null;
-		} catch (ShareNotFound $e) {
+			$shareToken = $wopi->getShare();
+			if ($shareToken) {
+				return $this->shareManager->getShareByToken($shareToken);
+			}
+			return $this->helper->getShareFromNode($file);
+		} catch (ShareNotFound) {
 		}
 
 		return null;
@@ -815,15 +943,12 @@ class WopiController extends Controller {
 
 	/**
 	 * Endpoint to return the template file that is requested by collabora to create a new document
-	 *
-	 * @PublicPage
-	 * @NoCSRFRequired
-	 *
-	 * @param $fileId
-	 * @param $access_token
-	 * @return JSONResponse|StreamResponse
 	 */
-	public function getTemplate($fileId, $access_token) {
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
+	#[FrontpageRoute(verb: 'GET', url: 'wopi/template/{fileId}')]
+	public function getTemplate(string $fileId, string $access_token): JSONResponse|StreamResponse {
 		try {
 			$wopi = $this->wopiMapper->getWopiForToken($access_token);
 		} catch (UnknownTokenException $e) {
@@ -856,7 +981,7 @@ class WopiController extends Controller {
 		try {
 			$util = \OC::$server->query(\OCA\Encryption\Util::class);
 			return $util->isMasterKeyEnabled();
-		} catch (QueryException $e) {
+		} catch (QueryException) {
 			// No encryption module enabled
 			return false;
 		}
@@ -870,5 +995,19 @@ class WopiController extends Controller {
 	private function getWopiUrlForTemplate(Wopi $wopi): string {
 		$nextcloudUrl = $this->appConfig->getNextcloudUrl() ?: trim($this->urlGenerator->getAbsoluteURL(''), '/');
 		return $nextcloudUrl . '/index.php/apps/richdocuments/wopi/template/' . $wopi->getTemplateId() . '?access_token=' . $wopi->getToken();
+	}
+
+	private function generateSettingToken(string $userId): string {
+		return $this->settingsService->generateIframeToken('user', $userId)['token'];
+	}
+
+	private function generateSettings(string $token, string $type, string $userId = ''): array {
+		$nextcloudUrl = $this->appConfig->getNextcloudUrl() ?: trim($this->urlGenerator->getAbsoluteURL(''), '/');
+		$uri = $nextcloudUrl . '/index.php/apps/richdocuments/wopi/settings' . '?type=' . $type . '&access_token=' . $token . '&fileId=' . '-1';
+		$etag = $this->settingsService->getFolderEtag($type) . $this->settingsService->getPresentationFolderEtag($type, $userId);
+		return [
+			'uri' => $uri,
+			'stamp' => $etag
+		];
 	}
 }

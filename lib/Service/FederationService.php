@@ -24,6 +24,7 @@ use OCP\ICache;
 use OCP\ICacheFactory;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCP\Security\ITrustedDomainHelper;
 use OCP\Share\IShare;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -32,34 +33,23 @@ use Psr\Log\LoggerInterface;
 class FederationService {
 	/** @var ICache */
 	private $cache;
-	/** @var IClientService */
-	private $clientService;
-	/** @var LoggerInterface */
-	private $logger;
 	/** @var TrustedServers */
 	private $trustedServers;
-	/** @var AppConfig */
-	private $appConfig;
-	/** @var TokenManager */
-	private $tokenManager;
-	/** @var IRequest */
-	private $request;
-	/** @var IURLGenerator */
-	private $urlGenerator;
 
-	public function __construct(ICacheFactory $cacheFactory, IClientService $clientService, LoggerInterface $logger, TokenManager $tokenManager, AppConfig $appConfig, IRequest $request, IURLGenerator $urlGenerator) {
+	public function __construct(
+		ICacheFactory $cacheFactory,
+		private IClientService $clientService,
+		private LoggerInterface $logger,
+		private TokenManager $tokenManager,
+		private AppConfig $appConfig,
+		private IRequest $request,
+		private IURLGenerator $urlGenerator,
+		private ITrustedDomainHelper $trustedDomainHelper,
+	) {
 		$this->cache = $cacheFactory->createDistributed('richdocuments_remote/');
-		$this->clientService = $clientService;
-		$this->logger = $logger;
-		$this->tokenManager = $tokenManager;
-		$this->appConfig = $appConfig;
-		$this->request = $request;
-		$this->urlGenerator = $urlGenerator;
 		try {
 			$this->trustedServers = \OC::$server->get(\OCA\Federation\TrustedServers::class);
-		} catch (NotFoundExceptionInterface $e) {
-		} catch (ContainerExceptionInterface $e) {
-		} catch (AutoloadNotAllowedException $e) {
+		} catch (NotFoundExceptionInterface|ContainerExceptionInterface|AutoloadNotAllowedException) {
 		}
 	}
 
@@ -68,9 +58,7 @@ class FederationService {
 			return [];
 		}
 
-		return array_map(function (array $server) {
-			return $server['url'];
-		}, $this->trustedServers->getServers());
+		return array_map(fn (array $server) => $server['url'], $this->trustedServers->getServers());
 	}
 
 	/**
@@ -80,13 +68,18 @@ class FederationService {
 	 */
 	public function getRemoteCollaboraURL($remote) {
 		// If no protocol is provided we default to https
-		if (strpos($remote, 'http://') !== 0 && strpos($remote, 'https://') !== 0) {
+		if (!str_starts_with($remote, 'http://') && !str_starts_with($remote, 'https://')) {
 			$remote = 'https://' . $remote;
 		}
 
 		if (!$this->isTrustedRemote($remote)) {
 			throw new \Exception('Unable to determine collabora URL of remote server ' . $remote . ' - Remote is not a trusted server');
 		}
+
+		if ($this->trustedDomainHelper->isTrustedUrl($remote)) {
+			return $this->appConfig->getCollaboraUrlInternal();
+		}
+
 		$remoteCollabora = $this->cache->get('richdocuments_remote/' . $remote);
 		if ($remoteCollabora !== null) {
 			return $remoteCollabora;
@@ -106,8 +99,7 @@ class FederationService {
 	}
 
 	public function isTrustedRemote($domainWithPort) {
-		$domainWithPort = rtrim($domainWithPort, '/');
-		if (strpos($domainWithPort, 'http://') === 0 || strpos($domainWithPort, 'https://') === 0) {
+		if (str_starts_with($domainWithPort, 'http://') || str_starts_with($domainWithPort, 'https://')) {
 			$port = parse_url($domainWithPort, PHP_URL_PORT);
 			$domainWithPort = parse_url($domainWithPort, PHP_URL_HOST) . ($port ? ':' . $port : '');
 		}
@@ -127,9 +119,12 @@ class FederationService {
 			if (!is_string($trusted)) {
 				break;
 			}
-			$regex = '/^' . implode('[-\.a-zA-Z0-9]*', array_map(function ($v) {
-				return preg_quote($v, '/');
-			}, explode('*', $trusted))) . '$/i';
+
+			// This regular expression ensures that wildcards for trusted domains
+			// are parsed properly in order to match subdomains:
+			// *.example.com => /^[-\.a-zA-Z0-9]*\.example\.com$/i
+			$regex = '/^' . implode('[-\.a-zA-Z0-9]*', array_map(fn ($v) => preg_quote($v, '/'), explode('*', $trusted))) . '$/i';
+
 			if (preg_match($regex, $domain) || preg_match($regex, $domainWithPort)) {
 				return true;
 			}
