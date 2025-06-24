@@ -28,7 +28,13 @@ class Capabilities implements ICapability {
 		'application/vnd.ms-visio.drawing',
 		'application/vnd.wordperfect',
 		'application/rtf',
+		'application/vnd.oasis.opendocument.text-template',
+		'application/vnd.oasis.opendocument.spreadsheet-template',
+		'application/vnd.oasis.opendocument.presentation-template',
 		'text/rtf',
+		'application/x-iwork-pages-sffpages',
+		'application/x-iwork-numbers-sffnumbers',
+		'application/x-iwork-keynote-sffkey',
 	];
 
 	public const MIMETYPES_MSOFFICE = [
@@ -90,7 +96,7 @@ class Capabilities implements ICapability {
 		private PermissionManager $permissionManager,
 		private IAppManager $appManager,
 		private ?string $userId,
-		private IURLGenerator $urlGenerator
+		private IURLGenerator $urlGenerator,
 	) {
 	}
 

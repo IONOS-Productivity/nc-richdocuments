@@ -11,17 +11,18 @@ OC.L10N.register(
     "A PHP extension stopped the file upload" : "Chur leudachan PHP stad air luchdadh suas an fhaidhle",
     "File is too big" : "Tha am faidhle ro mhòr",
     "Invalid file provided" : "Chaidh faidhle mì-dhligheach a thoirt seachad",
-    "Cancel" : "Sguir dheth",
     "Save" : "Sàbhail",
+    "Remove" : "Thoir air falbh",
+    "Cancel" : "Sguir dheth",
     "No results" : "Gun toradh",
     "Close" : "Dùin",
     "Edit" : "Deasaich",
-    "Error" : "Mearachd",
     "Add to favorites" : "Cuir ris na h-annsachdan",
     "Details" : "Mion-fhiosrachadh",
     "Download" : "Luchdaich a-nuas",
     "New file" : "Faidhle ùr",
     "Create" : "Cruthaich",
-    "Select template" : "Tagh teamplaid"
+    "Select template" : "Tagh teamplaid",
+    "Error" : "Mearachd"
 },
 "nplurals=4; plural=(n==1 || n==11) ? 0 : (n==2 || n==12) ? 1 : (n > 2 && n < 20) ? 2 : 3;");
