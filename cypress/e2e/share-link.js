@@ -107,9 +107,6 @@ describe('Public sharing of office documents', () => {
 	})
 })
 
-/**
- *
- */
 function waitForCollabora() {
 	cy.waitForViewer()
 	cy.waitForCollabora()

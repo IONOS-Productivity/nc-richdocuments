@@ -4,6 +4,7 @@
  */
 
 import { getRootUrl, generateUrl } from '@nextcloud/router'
+import { getSharingToken } from '@nextcloud/sharing/public'
 import { languageToBCP47 } from './index.js'
 import Config from './../services/config.tsx'
 
@@ -28,7 +29,7 @@ const getWopiSrc = (fileId) => {
 	return wopiurl
 }
 
-const getWopiUrl = ({ fileId, readOnly, closeButton, revisionHistory, target = undefined }) => {
+const getWopiUrl = ({ fileId, readOnly, closeButton, revisionHistory, target = undefined, startPresentation = false }) => {
 	// Only set the revision history parameter if the versions app is enabled
 	revisionHistory = revisionHistory && window?.oc_appswebroots?.files_versions
 
@@ -43,6 +44,7 @@ const getWopiUrl = ({ fileId, readOnly, closeButton, revisionHistory, target = u
 		+ (revisionHistory ? '&revisionhistory=1' : '')
 		+ (readOnly ? '&permission=readonly' : '')
 		+ (target ? '&target=' + encodeURIComponent(target) : '')
+		+ (startPresentation ? '&startPresentation=1' : '')
 }
 
 const getDocumentUrlFromTemplate = (templateId, fileName, fileDir, fillWithTemplate) => {
@@ -61,7 +63,7 @@ const getDocumentUrlForPublicFile = (fileName, fileId) => {
 	return generateUrl(
 		'apps/richdocuments/public?shareToken={shareToken}&fileName={fileName}&requesttoken={requesttoken}&fileId={fileId}',
 		{
-			shareToken: document.getElementById('sharingToken').value,
+			shareToken: getSharingToken(),
 			fileName,
 			fileId,
 			requesttoken: OC.requestToken,
@@ -79,8 +81,17 @@ const getDocumentUrlForFile = (fileDir, fileId) => {
 		})
 }
 
+export const getConfigFileUrl = () => {
+	return generateUrl('apps/richdocuments/wopi/settings', null, { baseURL: getCallbackBaseUrl() })
+}
+
 const getNextcloudUrl = () => {
 	return window.location.host
+}
+
+export const getCoolServerUrl = (collaboraBaseUrl) => {
+	return collaboraBaseUrl
+		+ '/browser/dist/admin/adminIntegratorSettings.html'
 }
 
 export {

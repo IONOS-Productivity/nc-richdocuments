@@ -43,7 +43,7 @@ class DocumentAPIController extends \OCP\AppFramework\OCSController {
 		private LoggerInterface $logger,
 		private ILockManager $lockManager,
 		private ISession $session,
-		private ?string $userId
+		private ?string $userId,
 	) {
 		parent::__construct(Application::APPNAME, $request);
 	}
@@ -168,9 +168,9 @@ class DocumentAPIController extends \OCP\AppFramework\OCSController {
 				Application::APPNAME
 			));
 			return new DataResponse([]);
-		} catch (NoLockProviderException|PreConditionNotMetException $e) {
+		} catch (NoLockProviderException|PreConditionNotMetException) {
 			return new DataResponse([], Http::STATUS_BAD_REQUEST);
-		} catch (\Exception $e) {
+		} catch (\Exception) {
 			return new DataResponse([], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
