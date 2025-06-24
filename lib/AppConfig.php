@@ -117,7 +117,7 @@ class AppConfig {
 
 		$keys = $this->config->getAppKeys(self::WATERMARK_APP_NAMESPACE);
 		foreach ($keys as $key) {
-			if (strpos($key, 'watermark_') === 0) {
+			if (str_starts_with($key, 'watermark_')) {
 				$value = $this->getAppValueArray($key);
 				$value = $value === 'yes' ? true : $value;
 				$result[$key] = $value === 'no' ? false : $value;
@@ -202,6 +202,13 @@ class AppConfig {
 		return $this->config->getAppValue(Application::APPNAME, self::USE_SECURE_VIEW_ADDITIONAL_MIMES, 'no') === 'yes';
 	}
 
+	public function getMimeTypes(): array {
+		return array_merge(
+			Capabilities::MIMETYPES,
+			Capabilities::MIMETYPES_MSOFFICE,
+		);
+	}
+
 	public function getDomainList(): array {
 		$urls = array_merge(
 			[ $this->domainOnly($this->getCollaboraUrlPublic()) ],
@@ -218,22 +225,18 @@ class AppConfig {
 		}
 
 		$federationService = \OCP\Server::get(FederationService::class);
-		$trustedNextcloudDomains = array_filter(array_map(function ($server) use ($federationService) {
-			return $federationService->isTrustedRemote($server) ? $server : null;
-		}, $federationService->getTrustedServers()));
+		$trustedNextcloudDomains = array_filter(array_map(fn ($server) => $federationService->isTrustedRemote($server) ? $server : null, $federationService->getTrustedServers()));
 
 		$trustedCollaboraDomains = array_filter(array_map(function ($server) use ($federationService) {
 			try {
 				return $federationService->getRemoteCollaboraURL($server);
-			} catch (\Exception $e) {
+			} catch (\Exception) {
 				// If there is no remote collabora server we can just skip that
 				return null;
 			}
 		}, $trustedNextcloudDomains));
 
-		return array_map(function ($url) {
-			return $this->domainOnly($url);
-		}, array_merge($trustedNextcloudDomains, $trustedCollaboraDomains));
+		return array_map(fn ($url) => $this->domainOnly($url), array_merge($trustedNextcloudDomains, $trustedCollaboraDomains));
 	}
 
 	private function getGSDomains(): array {

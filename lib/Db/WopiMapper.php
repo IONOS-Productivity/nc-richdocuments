@@ -17,29 +17,14 @@ use Psr\Log\LoggerInterface;
 
 /** @template-extends QBMapper<Wopi> */
 class WopiMapper extends QBMapper {
-	/** @var ISecureRandom */
-	private $random;
-
-	/** @var LoggerInterface */
-	private $logger;
-
-	/** @var ITimeFactory */
-	private $timeFactory;
-
-	/** @var AppConfig */
-	private $appConfig;
-
-	public function __construct(IDBConnection $db,
-		ISecureRandom $random,
-		LoggerInterface $logger,
-		ITimeFactory $timeFactory,
-		AppConfig $appConfig) {
+	public function __construct(
+		IDBConnection $db,
+		private ISecureRandom $random,
+		private LoggerInterface $logger,
+		private ITimeFactory $timeFactory,
+		private AppConfig $appConfig,
+	) {
 		parent::__construct($db, 'richdocuments_wopi', Wopi::class);
-
-		$this->random = $random;
-		$this->logger = $logger;
-		$this->timeFactory = $timeFactory;
-		$this->appConfig = $appConfig;
 	}
 
 	/**
@@ -81,6 +66,28 @@ class WopiMapper extends QBMapper {
 		return $wopi;
 	}
 
+	public function generateUserSettingsToken($fileId, $userId, $version, $serverHost) {
+		$token = $this->random->generate(32, ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_UPPER . ISecureRandom::CHAR_DIGITS);
+
+		$wopi = Wopi::fromParams([
+			'fileid' => $fileId,
+			'ownerUid' => $userId,
+			'editorUid' => $userId,
+			'version' => $version,
+			'canwrite' => true,
+			'serverHost' => $serverHost,
+			'token' => $token,
+			'expiry' => $this->calculateNewTokenExpiry(),
+			'templateId' => '0',
+			'tokenType' => Wopi::TOKEN_TYPE_SETTING_AUTH,
+		]);
+
+		/** @var Wopi $wopi */
+		$wopi = $this->insert($wopi);
+
+		return $wopi;
+	}
+
 	public function generateInitiatorToken($uid, $remoteServer) {
 		$token = $this->random->generate(32, ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_UPPER . ISecureRandom::CHAR_DIGITS);
 
@@ -106,7 +113,7 @@ class WopiMapper extends QBMapper {
 	 */
 	public function getPathForToken(
 		#[\SensitiveParameter]
-		$token
+		$token,
 	): Wopi {
 		return $this->getWopiForToken($token);
 	}
@@ -123,7 +130,7 @@ class WopiMapper extends QBMapper {
 	 */
 	public function getWopiForToken(
 		#[\SensitiveParameter]
-		string $token
+		string $token,
 	): Wopi {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')

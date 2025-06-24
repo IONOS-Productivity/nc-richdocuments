@@ -18,18 +18,20 @@ use OCP\Settings\ISettings;
 
 class Admin implements ISettings {
 	public function __construct(
-		private IConfig             $config,
-		private AppConfig           $appConfig,
-		private TemplateManager     $manager,
+		private IConfig $config,
+		private AppConfig $appConfig,
+		private TemplateManager $manager,
 		private CapabilitiesService $capabilitiesService,
-		private DemoService         $demoService,
-		private FontService 		$fontService,
-		private InitialStateService $initialStateService
+		private DemoService $demoService,
+		private FontService $fontService,
+		private InitialStateService $initialStateService,
 	) {
 	}
 
 	public function getForm(): TemplateResponse {
 		$this->initialStateService->provideCapabilities();
+		$this->initialStateService->provideAdminSettings();
+
 		return new TemplateResponse(
 			'richdocuments',
 			'admin',
@@ -45,25 +47,27 @@ class Admin implements ISettings {
 					'external_apps' => $this->config->getAppValue('richdocuments', 'external_apps'),
 					'canonical_webroot' => $this->config->getAppValue('richdocuments', 'canonical_webroot'),
 					'disable_certificate_verification' => $this->config->getAppValue('richdocuments', 'disable_certificate_verification', '') === 'yes',
-					'templates' => $this->manager->getSystemFormatted(),
-					'templatesAvailable' => $this->capabilitiesService->hasTemplateSource(),
 					'settings' => $this->appConfig->getAppSettings(),
 					'demo_servers' => $this->demoService->fetchDemoServers(),
 					'web_server' => strtolower($_SERVER['SERVER_SOFTWARE']),
 					'os_family' => PHP_VERSION_ID >= 70200 ? PHP_OS_FAMILY : PHP_OS,
 					'platform' => php_uname('m'),
 					'fonts' => $this->fontService->getFontFileNames(),
+					'esignature_base_url' => $this->config->getAppValue('richdocuments', 'esignature_base_url'),
+					'esignature_client_id' => $this->config->getAppValue('richdocuments', 'esignature_client_id'),
+					'esignature_secret' => $this->config->getAppValue('richdocuments', 'esignature_secret'),
+					'hasSettingIframeSupport' => $this->capabilitiesService->hasSettingIframeSupport(),
 				],
 			],
 			'blank'
 		);
 	}
 
-	public function getSection() {
+	public function getSection(): string {
 		return 'richdocuments';
 	}
 
-	public function getPriority() {
+	public function getPriority(): int {
 		return 0;
 	}
 }

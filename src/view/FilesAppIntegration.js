@@ -6,6 +6,7 @@
 import { generateUrl } from '@nextcloud/router'
 import { getCurrentUser } from '@nextcloud/auth'
 import { getFilePickerBuilder, spawnDialog } from '@nextcloud/dialogs'
+import { isPublicShare } from '@nextcloud/sharing/public'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { getCurrentDirectory } from '../helpers/filesApp.js'
@@ -16,8 +17,6 @@ import {
 	davRootPath,
 } from '@nextcloud/files'
 import SaveAs from '../components/Modal/SaveAs.vue'
-
-const isPublic = document.getElementById('isPublic') && document.getElementById('isPublic').value === '1'
 
 export default {
 
@@ -126,7 +125,7 @@ export default {
 			return
 		}
 
-		if (isPublic) {
+		if (isPublicShare()) {
 			console.error('[FilesAppIntegration] Sharing is not supported')
 			return
 		}
@@ -149,8 +148,14 @@ export default {
 		}
 	},
 
+	/**
+	 * @param mimeTypeFilter
+	 * @param insertFileProc
+	 * @param insertHandler
+	 * @private
+	 */
 	insertFile_impl(mimeTypeFilter, insertFileProc, insertHandler) {
-		if (isPublic) {
+		if (isPublicShare()) {
 			console.error('[FilesAppIntegration] insertFile is not supported')
 		}
 
@@ -337,7 +342,7 @@ export default {
 		}
 		entry.append(label)
 
-		const isFileOwner = !isPublic && this.getFileModel() && typeof this.getFileModel().get('shareOwner') === 'undefined'
+		const isFileOwner = !isPublicShare() && this.getFileModel() && typeof this.getFileModel().get('shareOwner') === 'undefined'
 		const canEdit = this.getFileModel() && !!(this.getFileModel().get('permissions') & OC.PERMISSION_UPDATE)
 		if (isFileOwner && canEdit && !view.IsCurrentView) {
 			const removeButton = $('<div class="icon-close" title="' + t('richdocuments', 'Remove user') + '"/>')
@@ -421,7 +426,7 @@ export default {
 			return
 		}
 
-		if (isPublic || !OCA?.Files?.Sidebar) {
+		if (isPublicShare() || !OCA?.Files?.Sidebar) {
 			console.error('[FilesAppIntegration] Versions are not supported')
 			return
 		}
@@ -506,7 +511,7 @@ export default {
 	},
 
 	async getFileNode(forceFetch = false) {
-		if (isPublic) {
+		if (isPublicShare()) {
 			return
 		}
 

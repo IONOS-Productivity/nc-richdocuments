@@ -23,13 +23,6 @@ return [
 		// external api access
 		['name' => 'document#extAppGetData', 'url' => '/ajax/extapp/data/{fileId}', 'verb' => 'POST'],
 
-		// WOPI access
-		['name' => 'wopi#checkFileInfo', 'url' => 'wopi/files/{fileId}', 'verb' => 'GET'],
-		['name' => 'wopi#getFile', 'url' => 'wopi/files/{fileId}/contents', 'verb' => 'GET'],
-		['name' => 'wopi#putFile', 'url' => 'wopi/files/{fileId}/contents', 'verb' => 'POST'],
-		['name' => 'wopi#postFile', 'url' => 'wopi/files/{fileId}', 'verb' => 'POST'],
-		['name' => 'wopi#getTemplate', 'url' => 'wopi/template/{fileId}', 'verb' => 'GET'],
-
 		// Settings
 		['name' => 'settings#setPersonalSettings', 'url' => 'ajax/personal.php', 'verb' => 'POST'],
 		['name' => 'settings#setSettings', 'url' => 'ajax/admin.php', 'verb' => 'POST'],
@@ -43,12 +36,24 @@ return [
 		['name' => 'settings#getFontFileOverview', 'url' => 'settings/fonts/{name}/overview', 'verb' => 'GET'],
 		['name' => 'settings#deleteFontFile', 'url' => 'settings/fonts/{name}', 'verb' => 'DELETE'],
 		['name' => 'settings#uploadFontFile', 'url' => 'settings/fonts', 'verb' => 'POST'],
+		[
+			'name' => 'settings#getSettingsFile',
+			'url' => 'settings/{type}/{token}/{category}/{name}',
+			'verb' => 'GET',
+			'requirements' => [
+				'type' => '[a-zA-Z0-9_\-]+',
+				'category' => '[a-zA-Z0-9_\-]+',
+				'name' => '.+',
+			],
+		],
+		['name' => 'settings#generateIframeToken', 'url' => 'settings/generateToken/{type}', 'verb' => 'GET'],
 
 		// Direct Editing: Webview
 		['name' => 'directView#show', 'url' => '/direct/{token}', 'verb' => 'GET'],
 
 		// Direct Editing: Assets
 		['name' => 'assets#create', 'url' => 'assets', 'verb' => 'POST'],
+		['name' => 'assets#createFromTask', 'url' => 'assets/tasks', 'verb' => 'POST'],
 		['name' => 'assets#get', 'url' => 'assets/{token}', 'verb' => 'GET'],
 
 		// templates

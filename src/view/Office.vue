@@ -103,6 +103,7 @@ import {
 	generateUrl,
 	imagePath,
 } from '@nextcloud/router'
+import { isPublicShare, getSharingToken } from '@nextcloud/sharing/public'
 import { getCapabilities } from './../services/capabilities.ts'
 import {
 	generateCSSVarTokens,
@@ -113,6 +114,7 @@ import Config from '../services/config.tsx'
 import autoLogout from '../mixins/autoLogout.js'
 import openLocal from '../mixins/openLocal.js'
 import pickLink from '../mixins/pickLink.js'
+import assistant from '../mixins/assistant.js'
 import saveAs from '../mixins/saveAs.js'
 import uiMention from '../mixins/uiMention.js'
 import version from '../mixins/version.js'
@@ -139,7 +141,7 @@ export default {
 		ZoteroHint,
 	},
 	mixins: [
-		autoLogout, openLocal, pickLink, saveAs, uiMention, version,
+		autoLogout, openLocal, pickLink, saveAs, uiMention, version, assistant,
 	],
 	props: {
 		filename: {
@@ -230,10 +232,10 @@ export default {
 			return !!window.TESTING
 		},
 		isPublic() {
-			return document.getElementById('isPublic')?.value === '1'
+			return isPublicShare()
 		},
 		shareToken() {
-			return document.getElementById('sharingToken')?.value
+			return getSharingToken()
 		},
 		showAdminStorageFailure() {
 			return getCurrentUser()?.isAdmin && this.errorType === 'websocketloadfailed'
@@ -316,6 +318,7 @@ export default {
 
 			Config.update('urlsrc', data.urlSrc)
 			Config.update('wopi_callback_url', loadState('richdocuments', 'wopi_callback_url', ''))
+			Config.update('startPresentation', loadState('richdocuments', 'startPresentation', false))
 
 			const forceReadOnly = this.isEmbedded && !this.hasWidgetEditingEnabled
 
@@ -325,6 +328,7 @@ export default {
 				readOnly: forceReadOnly || version > 0,
 				revisionHistory: !this.isPublic,
 				closeButton: !Config.get('hideCloseButton') && !this.isEmbedded,
+				startPresentation: Config.get('startPresentation'),
 			})
 			this.$set(this.formData, 'action', action)
 			this.$set(this.formData, 'accessToken', data.token)
@@ -464,6 +468,9 @@ export default {
 			case 'UI UI_PickLink':
 			case 'UI_PickLink':
 				this.pickLink()
+				break
+			case 'UI_InsertAIContent':
+				this.openAssistant()
 				break
 			case 'Action_GetLinkPreview':
 				this.resolveLink(args.url)

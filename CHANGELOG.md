@@ -4,227 +4,187 @@
 -->
 # Changelog
 
-## 8.5.6
-
-### Added
-- Composer instructions to readme @elzody [#4633](https://github.com/nextcloud/richdocuments/pull/4633)
-
-### Fixed
-- Ensure we have a clean database schema when migrating @juliusknorr [#4610](https://github.com/nextcloud/richdocuments/pull/4610)
-- Trim trailing slash before validating trusted remotes @juliusknorr [#4626](https://github.com/nextcloud/richdocuments/pull/4626)
-
-## 8.5.5
-
-### Added
-
-- feat(test): add tests for template fields with empty labels [#4538](https://github.com/nextcloud/richdocuments/pull/4538)
+## 8.7.1
 
 ### Fixed
 
-- Properly handle editor user id for direct editing links [#4574](https://github.com/nextcloud/richdocuments/pull/4574)
-- fix(federation): properly encode file names [#4583](https://github.com/nextcloud/richdocuments/pull/4583)
+- fix: Avoid failing on fopen for NonExistingFiles [#4830](https://github.com/nextcloud/richdocuments/pull/4830)
+- feat(setting): add dark/light iframe CSS vars [#4813](https://github.com/nextcloud/richdocuments/pull/4813)
+- fix: allow document creation only for users that can edit [#4847](https://github.com/nextcloud/richdocuments/pull/4847)
 
-### Other
-
-- ci: Skip save as test until upstream bug is fixed [#4569](https://github.com/nextcloud/richdocuments/pull/4569)
-- chore: update actions/cache [#4572](https://github.com/nextcloud/richdocuments/pull/4572)
-
-## 8.5.4
-
-* [Chore(deps-dev): Bump cypress-split from 1.24.6 to 1.24.7 (richdocuments#4318)](https://github.com/nextcloud/richdocuments/pull/4318)
-* [Chore(deps-dev): Bump @nextcloud/cypress from 1.0.0-beta.11 to 1.0.0-beta.12 (richdocuments#4319)](https://github.com/nextcloud/richdocuments/pull/4319)
-* [Chore(deps): Bump @nextcloud/moment from 1.3.1 to 1.3.2 (richdocuments#4340)](https://github.com/nextcloud/richdocuments/pull/4340)
-* [Chore(deps): Bump @nextcloud/files from 3.10.0 to 3.10.1 (richdocuments#4341)](https://github.com/nextcloud/richdocuments/pull/4341)
-* [Fix npm audit (richdocuments#4357)](https://github.com/nextcloud/richdocuments/pull/4357)
-* [Skip errors that may interrupt file creation (richdocuments#4365)](https://github.com/nextcloud/richdocuments/pull/4365)
-* [Fix: Add another option for otf font mimetypes (richdocuments#4372)](https://github.com/nextcloud/richdocuments/pull/4372)
-* [Fix(sharing): use correct save path when renaming (richdocuments#4379)](https://github.com/nextcloud/richdocuments/pull/4379)
-* [Update nextcloud/ocp dependency (richdocuments#4382)](https://github.com/nextcloud/richdocuments/pull/4382)
-* [Chore(deps-dev): Bump ts-loader from 9.5.1 to 9.5.2 (richdocuments#4395)](https://github.com/nextcloud/richdocuments/pull/4395)
-* [Update nextcloud/ocp dependency (richdocuments#4415)](https://github.com/nextcloud/richdocuments/pull/4415)
-* [Refactor: remove composer dir and redirect autoloader (richdocuments#4429)](https://github.com/nextcloud/richdocuments/pull/4429)
-* [Fix: Read from local file stream to avoid locking during preview generation (richdocuments#4432)](https://github.com/nextcloud/richdocuments/pull/4432)
-* [Update nextcloud/ocp dependency (richdocuments#4438)](https://github.com/nextcloud/richdocuments/pull/4438)
-* [Chore(deps-dev): Bump cypress-split from 1.24.7 to 1.24.9 (richdocuments#4456)](https://github.com/nextcloud/richdocuments/pull/4456)
-* [Chore(deps-dev): Bump @nextcloud/cypress from 1.0.0-beta.12 to 1.0.0-beta.13 (richdocuments#4457)](https://github.com/nextcloud/richdocuments/pull/4457)
-* [Chore(deps-dev): Bump cypress-split from 1.24.9 to 1.24.11 (richdocuments#4486)](https://github.com/nextcloud/richdocuments/pull/4486)
-* [Chore(deps): Bump @nextcloud/files from 3.10.1 to 3.10.2 (richdocuments#4487)](https://github.com/nextcloud/richdocuments/pull/4487)
-* [Update nextcloud/ocp dependency (richdocuments#4489)](https://github.com/nextcloud/richdocuments/pull/4489)
-* [Fix npm audit (richdocuments#4493)](https://github.com/nextcloud/richdocuments/pull/4493)
-* [Chore: remove `vendor/` from `.nextcloudignore` (richdocuments#4502)](https://github.com/nextcloud/richdocuments/pull/4502)
-* [Chore(deps-dev): Bump @nextcloud/eslint-config from 8.4.1 to 8.4.2 (richdocuments#4508)](https://github.com/nextcloud/richdocuments/pull/4508)
-* [Chore(deps-dev): Bump @nextcloud/cypress from 1.0.0-beta.13 to 1.0.0-beta.14 (richdocuments#4509)](https://github.com/nextcloud/richdocuments/pull/4509)
-* [Chore(deps-dev): Bump cypress-split from 1.24.11 to 1.24.14 (richdocuments#4510)](https://github.com/nextcloud/richdocuments/pull/4510)
-* [Update nextcloud/ocp dependency (richdocuments#4516)](https://github.com/nextcloud/richdocuments/pull/4516)
-* [Fix(test): fix verify document open in notebookbar (richdocuments#4520)](https://github.com/nextcloud/richdocuments/pull/4520)
-* [Templates: better support cross-format templates (richdocuments#4527)](https://github.com/nextcloud/richdocuments/pull/4527)
-* [Feat: do not send logo css if value not provided (richdocuments#4532)](https://github.com/nextcloud/richdocuments/pull/4532)
-
-## 8.5.3
-
-### Added
-- Digitally sign documents via software certificates @vmiklos [#4170](https://github.com/nextcloud/richdocuments/pull/4170)
-- Implement support for insertion of multimedia from Nextcloud assets @mikekaganski [#4286](https://github.com/nextcloud/richdocuments/pull/4286)
-
-### Fixed
-- Use file picker component directly @elzody [#4028](https://github.com/nextcloud/richdocuments/pull/4028)
-- Get user by display name @elzody [#4199](https://github.com/nextcloud/richdocuments/pull/4199)
-- Properly throttle in error cases and add rate limit for public file creation @juliusknorr [#4201](https://github.com/nextcloud/richdocuments/pull/4201)
-- Skip css variable if not set (prevent warning on COOL side) @timar [#4224](https://github.com/nextcloud/richdocuments/pull/4224)
-- Limit open with Collabora action to pdf files @juliusknorr [#4234](https://github.com/nextcloud/richdocuments/pull/4234)
-- Fix errors when extracting content controls @juliusknorr [#4268](https://github.com/nextcloud/richdocuments/pull/4268)
-- Remove deprecated `title` parameter @elzody [#4272](https://github.com/nextcloud/richdocuments/pull/4272)
-- Link share of federated share @max-nextcloud [#4280](https://github.com/nextcloud/richdocuments/pull/4280)
-- Get storage from file instead of parent @elzody [#4302](https://github.com/nextcloud/richdocuments/pull/4302)
-- Do not treat guest as share owner @elzody [#4310](https://github.com/nextcloud/richdocuments/pull/4310)
-- Apply viewer wrapper as we do it in text @juliusknorr [#4289](https://github.com/nextcloud/richdocuments/pull/4289)
-- Attempt to make cypress tests more stable with a unified wait for close @juliusknorr [#4287](https://github.com/nextcloud/richdocuments/pull/4287)
-- Clarify the remote font config setting a bit @timar [#4274](https://github.com/nextcloud/richdocuments/pull/4274)
-- Adjust workflows docker images @elzody [#4167](https://github.com/nextcloud/richdocuments/pull/4167)
-
-### Other
-- `npm` audits [#4162](https://github.com/nextcloud/richdocuments/pull/4162), [#4192](https://github.com/nextcloud/richdocuments/pull/4192), [#4218](https://github.com/nextcloud/richdocuments/pull/4218), [#4265](https://github.com/nextcloud/richdocuments/pull/4265)
-- Update Nextcloud dependencies [#4214](https://github.com/nextcloud/richdocuments/pull/4214), [#4227](https://github.com/nextcloud/richdocuments/pull/4227), [4238](https://github.com/nextcloud/richdocuments/pull/4238), [#4262](https://github.com/nextcloud/richdocuments/pull/4262), [#4283](https://github.com/nextcloud/richdocuments/pull/4283), [#4298](https://github.com/nextcloud/richdocuments/pull/4298)
-- Update `cypress-split` [#4156](https://github.com/nextcloud/richdocuments/pull/4156), [#4188](https://github.com/nextcloud/richdocuments/pull/4188), [#4261](https://github.com/nextcloud/richdocuments/pull/4261)
-
-## 8.5.2
-
-### Fixed
-- Display proper custom logo in collabora @elzody [#4108](https://github.com/nextcloud/richdocuments/pull/4108)
-- Admin Settings page when Watermark label selected @Koc [#4128](https://github.com/nextcloud/richdocuments/pull/4128)
-- Asset download checks @juliusknorr [#4133](https://github.com/nextcloud/richdocuments/pull/4133)
-- Brute force protection for public file creation @juliusknorr [#4141](https://github.com/nextcloud/richdocuments/pull/4141)
-
-### Other
-- npm audit @nextcloud-command [#4093](https://github.com/nextcloud/richdocuments/pull/4093)
-- Update nextcloud/ocp dependency @nextcloud-command [#4100](https://github.com/nextcloud/richdocuments/pull/4100)
-- Bump vue-material-design-icons from 5.3.0 to 5.3.1 @dependabot [#4115](https://github.com/nextcloud/richdocuments/pull/4115)
-- npm audit @nextcloud-command [#4120](https://github.com/nextcloud/richdocuments/pull/4120)
-
-## 8.5.1
+## 8.7.0
 
 ### Added
 
-- Add parameter to allow converting files after filling out fields @juliushaertl [#4034](https://github.com/nextcloud/richdocuments/pull/4034)
+- feat: Add option to set secure view for public talk shares [#4808](https://github.com/nextcloud/richdocuments/pull/4808)
 
 ### Fixed
 
-- Don't ask for guest name on view-only share @elzody [#4072](https://github.com/nextcloud/richdocuments/pull/4072)
-- Properly render compare view @juliushaertl [#4078](https://github.com/nextcloud/richdocuments/pull/4078)
-- Emit notification on mentions @juliushaertl [#4082](https://github.com/nextcloud/richdocuments/pull/4082)
-- Fix missing `:` prefix @hcvcastro [#4011](https://github.com/nextcloud/richdocuments/pull/4011)
+- fix: Ensure edit permissions are checked before template file token generation [#4797](https://github.com/nextcloud/richdocuments/pull/4797)
+- fix(CoolFrame): Init and accept postMessage for setting iframe height [#4796](https://github.com/nextcloud/richdocuments/pull/4796)
+- fix: check if template fields should be extracted [#4810](https://github.com/nextcloud/richdocuments/pull/4810)
 
 ### Other
 
-- Update nextcloud/ocp dependency @nextcloud-command [#4039](https://github.com/nextcloud/richdocuments/pull/4039)
-- Update nextcloud/ocp dependency @nextcloud-command [#4065](https://github.com/nextcloud/richdocuments/pull/4065)
-- Bump @nextcloud/axios from 2.5.0 to 2.5.1 @dependabot [#4056](https://github.com/nextcloud/richdocuments/pull/4056)
-- Bump @nextcloud/cypress from 1.0.0-beta.8 to 1.0.0-beta.9 @dependabot [#4057](https://github.com/nextcloud/richdocuments/pull/4057)
+- Revert "test: use nightly collabora build for now" [#4790](https://github.com/nextcloud/richdocuments/pull/4790)
+- chore(test): add unit tests for RegisterTemplateFileCreatorListener [#4821](https://github.com/nextcloud/richdocuments/pull/4821)
 
-## 8.5.0
+## 8.6.5
+
+### Fixed
+- Fix save as on mobile with direct editing by @juliusknorr in [#4742](https://github.com/nextcloud/richdocuments/pull/4742)
+- Fall back to super share if share token is not available by @blizzz in [#4737](https://github.com/nextcloud/richdocuments/pull/4737)
+- Do not fetch remote Collabora URL for own server by @elzody in [#4734](https://github.com/nextcloud/richdocuments/pull/4734)
+- Load WOPI callback URL from initial state into config service by @elzody in [#4685](https://github.com/nextcloud/richdocuments/pull/4685)
+- Load viewer component asynchronously to reduce file size by @elzody in [#4683](https://github.com/nextcloud/richdocuments/pull/4683)
+- Accepted global templates file types by @elzody in [#4679](https://github.com/nextcloud/richdocuments/pull/4679)
+- Send UI theme input to COOL settings iframe by @codewithvk in [#4668](https://github.com/nextcloud/richdocuments/pull/4668)
+- userId undefined issue for template by @codewithvk in [#4666](https://github.com/nextcloud/richdocuments/pull/4666)
+
+### Other
+- npm audits
+- Dependency updates
+- Improve tests and CI workflows
+
+## 8.6.4
+
+### Added
+- Composer instructions in README @elzody [#4632](https://github.com/nextcloud/richdocuments/pull/4632)
+
+### Fixed
+- Reduce token generation for settings files @codewithvk [#4580](https://github.com/nextcloud/richdocuments/pull/4580)
+- Ensure we have a clean database schema when migrating @juliusknorr [#4609](https://github.com/nextcloud/richdocuments/pull/4609)
+- Adding/removing global template not reflected in sidebar @Rash419 [#4612](https://github.com/nextcloud/richdocuments/pull/4612)
+
+## 8.6.3
 
 ### Added
 
-- Template workflow API @elzody [#3798](https://github.com/nextcloud/richdocuments/pull/3798)
-- Add fonts installation document URL @luka-nextcloud [#3647](https://github.com/nextcloud/richdocuments/pull/3647)
+- feat: show presentation template in masterslides [#4585](https://github.com/nextcloud/richdocuments/pull/4585)
 
 ### Fixed
 
-- Do not set a guest name on actual users [#3950](https://github.com/nextcloud/richdocuments/pull/3950)
-- Fix missing conflicts on pdf templating @juliushaertl [#3949](https://github.com/nextcloud/richdocuments/pull/3949)
-- Do not ask for guest name on read only pdfs @juliushaertl [#3832](https://github.com/nextcloud/richdocuments/pull/3832)
-- Allow passing css var to change Collabora logo color @elzody [#3840](https://github.com/nextcloud/richdocuments/pull/3840)
-- Add API docs for form extraction and filling API @juliushaertl [#3868](https://github.com/nextcloud/richdocuments/pull/3868)
-- Run cypress against code nightly @juliushaertl [#3869](https://github.com/nextcloud/richdocuments/pull/3869)
-- Remove unnecessary files from release build @juliushaertl [#3870](https://github.com/nextcloud/richdocuments/pull/3870)
-- Show PDF even when download hidden on public share @elzody [#3872](https://github.com/nextcloud/richdocuments/pull/3872)
-- Add check if collabora supports template filling @juliushaertl [#3875](https://github.com/nextcloud/richdocuments/pull/3875)
-- Properly split with multi-collabora matrix @juliushaertl [#3890](https://github.com/nextcloud/richdocuments/pull/3890)
-- Guest username not picked up the second time loading a share link @elzody [#3910](https://github.com/nextcloud/richdocuments/pull/3910)
-- Allow double click in image picker @eszkadev [#3927](https://github.com/nextcloud/richdocuments/pull/3927)
-- properly send custom logo to collabora @elzody [#3928](https://github.com/nextcloud/richdocuments/pull/3928)
-- Cache `extractFields` response from Collabora @elzody [#3932](https://github.com/nextcloud/richdocuments/pull/3932)
-- Bring back federated editing in viewer iframe @juliushaertl [#3940](https://github.com/nextcloud/richdocuments/pull/3940)
-- Switch to new API to set volatile user to prevent persisting it in any case @juliushaertl [#3833](https://github.com/nextcloud/richdocuments/pull/3833)
-- Use shared default options for HTTP client requests @mejo- [#3831](https://github.com/nextcloud/richdocuments/pull/3831)
-- Add host_session_id parameter @hcvcastro [#3763](https://github.com/nextcloud/richdocuments/pull/3763)
-- Use getFirstNodeById as it is cached @juliushaertl [#3820](https://github.com/nextcloud/richdocuments/pull/3820)
-- Add 'title' attribute to iframe for accessibility @Darshan-upadhyay1110 [#3807](https://github.com/nextcloud/richdocuments/pull/3807)
-- Avoid background fetch if not configured @juliushaertl [#3790](https://github.com/nextcloud/richdocuments/pull/3790)
-- Revert "ci: Skip failing open tests for now due to upstream bug" @juliushaertl [#3794](https://github.com/nextcloud/richdocuments/pull/3794)
-- Make built-in code server setup more stable @juliushaertl [#3762](https://github.com/nextcloud/richdocuments/pull/3762)
-- Block incompatible operations with remote tokens @juliushaertl [#3635](https://github.com/nextcloud/richdocuments/pull/3635)
-- Use new property for admin user indication @eszkadev [#3748](https://github.com/nextcloud/richdocuments/pull/3748)
-- Avoid requesting remote endpoints during bootstrap @juliushaertl [#3749](https://github.com/nextcloud/richdocuments/pull/3749)
-- Remove legacy Viewer code @elzody [#3727](https://github.com/nextcloud/richdocuments/pull/3727)
-- Always pass is_admin property to userextrainfo @eszkadev [#3726](https://github.com/nextcloud/richdocuments/pull/3726)
-- Grammar fixes for font install paragraph @roliverio [#3708](https://github.com/nextcloud/richdocuments/pull/3708)
-- Lazy register template creator through event @juliushaertl [#3614](https://github.com/nextcloud/richdocuments/pull/3614)
-- Make edit mode in interactive widgets opt-in @juliushaertl [#3619](https://github.com/nextcloud/richdocuments/pull/3619)
-
+- fix(settings): enable UserSettings wopi response [#4552](https://github.com/nextcloud/richdocuments/pull/4552)
+- Properly handle editor user id for direct editing links [#4575](https://github.com/nextcloud/richdocuments/pull/4575)
+- fix: send etag for settings URLs and update etag on file changes [#4577](https://github.com/nextcloud/richdocuments/pull/4577)
+- fix(federation): properly encode file names [#4584](https://github.com/nextcloud/richdocuments/pull/4584)
 
 ### Other
 
-- Update workflows from templates @skjnldsv [#3816](https://github.com/nextcloud/richdocuments/pull/3816)
-- Migrate REUSE to TOML format @AndyScherzinger [#3814](https://github.com/nextcloud/richdocuments/pull/3814)
-- Updating lint-eslint.yml workflow from template @nextcloud-command [#3731](https://github.com/nextcloud/richdocuments/pull/3731)
-- Updating pr-feedback.yml workflow from template @nextcloud-command [#3725](https://github.com/nextcloud/richdocuments/pull/3725)
-- Add SPDX header @AndyScherzinger [#3664](https://github.com/nextcloud/richdocuments/pull/3664)
-- Updating appstore-build-publish.yml workflow from template @nextcloud-command [#3624](https://github.com/nextcloud/richdocuments/pull/3624)
-- Cleanup old TemplateSaveAs code as this is no longer supported by Collabora @juliushaertl [#3582](https://github.com/nextcloud/richdocuments/pull/3582)
-- Adapt min PHP version to 8.1 @juliushaertl [#3576](https://github.com/nextcloud/richdocuments/pull/3576)
-- Implement PdfService using mikehaertl/php-pdftk [#3947](https://github.com/nextcloud/richdocuments/pull/3947)
-- Pass data to field depending on field type [#3954](https://github.com/nextcloud/richdocuments/pull/3954)
+- ci: Skip save as test until upstream bug is fixed [#4568](https://github.com/nextcloud/richdocuments/pull/4568)
+- chore: update actions/cache @elzody [#4570](https://github.com/nextcloud/richdocuments/pull/4570)
+- feat(test): add tests for template fields with empty labels [#4539](https://github.com/nextcloud/richdocuments/pull/4539)
+- fix(tests): use more generic selectors [#4579](https://github.com/nextcloud/richdocuments/pull/4579)
 
-## 8.5.0-beta.3
+## 8.6.2
+
+* [Update nextcloud/ocp dependency (richdocuments#4515)](https://github.com/nextcloud/richdocuments/pull/4515)
+* [Feat(settings): add admin & user setting iframe (richdocuments#4525)](https://github.com/nextcloud/richdocuments/pull/4525)
+* [Fix(url): correct WOPI settings URL to prevent duplicate `nextcloud` (richdocuments#4526)](https://github.com/nextcloud/richdocuments/pull/4526)
+* [Templates: better support cross-format templates (richdocuments#4528)](https://github.com/nextcloud/richdocuments/pull/4528)
+* [Feat: do not send logo css if value not provided (richdocuments#4533)](https://github.com/nextcloud/richdocuments/pull/4533)
+
+## 8.6.1
+
+### Fixed
+
+- Remove vendor/ from .nextcloudignore @elzody [#4503](https://github.com/nextcloud/richdocuments/pull/4503)
+
+## 8.6.0
+
+### Added
+- File conversion provider @elzody [#4408](https://github.com/nextcloud/richdocuments/pull/4408)
+- Move personal user settings page to Vue @codewithvk [#4388](https://github.com/nextcloud/richdocuments/pull/4388)
+- Emit notification on mentions @juliusknorr [#3960](https://github.com/nextcloud/richdocuments/pull/3960)
+- Move template settings to vue component @elzody [#4125](https://github.com/nextcloud/richdocuments/pull/4125)
+- Digitally sign documents via software certificates @vmiklos [#4129](https://github.com/nextcloud/richdocuments/pull/4129)
+- `startPresentation` URL parameter @elzody [#4209](https://github.com/nextcloud/richdocuments/pull/4209)
+- Electronic signing, add settings for eIDEasy @vmiklos [#4328](https://github.com/nextcloud/richdocuments/pull/4328)
+- Insert text and images generated with nextcloud assistant @elzody [#4333](https://github.com/nextcloud/richdocuments/pull/4333)
+- Add Template and pages/numbers/keynote mimetypes @juliusknorr [#4350](https://github.com/nextcloud/richdocuments/pull/4350)
+- Add another option for otf font mimetypes @juliusknorr [#4368](https://github.com/nextcloud/richdocuments/pull/4368)
+
+### Fixed
+- Translation format specifier @elzody [#4412](https://github.com/nextcloud/richdocuments/pull/4412)
+- Read from local file stream to avoid locking during preview generation @juliusknorr [#4431](https://github.com/nextcloud/richdocuments/pull/4431)
+- Portable document format changed to PDF @elzody [#4444](https://github.com/nextcloud/richdocuments/pull/4444)
+- Adjust testing matrix for Nextcloud 31 @nickvergessen [#4400](https://github.com/nextcloud/richdocuments/pull/4400)
+- Incomplete return type list @blizzz [#4410](https://github.com/nextcloud/richdocuments/pull/4410)
+- Catch InvalidFieldTypeException @juliusknorr [#3956](https://github.com/nextcloud/richdocuments/pull/3956)
+- Check for mimetype before processing new file from template @juliusknorr [#3958](https://github.com/nextcloud/richdocuments/pull/3958)
+- Catch parsing errors or null doc structure @juliusknorr [#3967](https://github.com/nextcloud/richdocuments/pull/3967)
+- Dispatch event instead of hook for audit logging @juliusknorr [#3969](https://github.com/nextcloud/richdocuments/pull/3969)
+- Pressing `Enter` submits guest name input @elzody [#3992](https://github.com/nextcloud/richdocuments/pull/3992)
+- Failed token generation on public shares @elzody [#4030](https://github.com/nextcloud/richdocuments/pull/4030)
+- Use proper file id for direct editing @juliusknorr [#4101](https://github.com/nextcloud/richdocuments/pull/4101)
+- Use correct save path when renaming @elzody [#4378](https://github.com/nextcloud/richdocuments/pull/4378)
+- Proper messages to mention response @juliusknorr [#4102](https://github.com/nextcloud/richdocuments/pull/4102)
+- Use autocomplete api for mentions @elzody [#4210](https://github.com/nextcloud/richdocuments/pull/4210)
+- Use new db types constants @elzody [#4230](https://github.com/nextcloud/richdocuments/pull/4230)
+- Update federated-editing.md @maximelehericy [#4251](https://github.com/nextcloud/richdocuments/pull/4251)
+- Apply viewer wrapper as we do it in text @juliusknorr [#4278](https://github.com/nextcloud/richdocuments/pull/4278)
+- Properly get empty template for direct editing @juliusknorr [#4335](https://github.com/nextcloud/richdocuments/pull/4335)
+- Notifier::prepare() threw \InvalidArgumentException @nickvergessen [#4353](https://github.com/nextcloud/richdocuments/pull/4353)
+- Skip errors that may interrupt file creation @juliusknorr [#4360](https://github.com/nextcloud/richdocuments/pull/4360)
+- Apply proper default timezone for watermarks @juliusknorr [#4366](https://github.com/nextcloud/richdocuments/pull/4366)
+
+### Other
+- Update translations @nextcloud-bot
+- Update dependencies @nextcloud-command
+- Rector @juliusknorr [#4045](https://github.com/nextcloud/richdocuments/pull/4045)
+- Remove composer dir and redirect autoloader @elzody [#4430](https://github.com/nextcloud/richdocuments/pull/4430)
+
+## 8.6.0-beta.2
+
+### Added
+- File conversion provider @elzody [#4408](https://github.com/nextcloud/richdocuments/pull/4408)
+- Move personal user settings page to Vue @codewithvk [#4388](https://github.com/nextcloud/richdocuments/pull/4388)
+
+### Fixed
+- Adjust testing matrix for Nextcloud 31 @nickvergessen [#4400](https://github.com/nextcloud/richdocuments/pull/4400)
+- Incomplete return type list @blizzz [#4410](https://github.com/nextcloud/richdocuments/pull/4410)
+
+### Other
+- Update translations @nextcloud-bot
+- Update dependencies @nextcloud-command
+
+
+## 8.6.0-beta.1
 
 ### Added
 
-- Pass data to field depending on field type [#3954](https://github.com/nextcloud/richdocuments/pull/3954)
+- Emit notification on mentions @juliusknorr [#3960](https://github.com/nextcloud/richdocuments/pull/3960)
+- Move template settings to vue component @elzody [#4125](https://github.com/nextcloud/richdocuments/pull/4125)
+- Digitally sign documents via software certificates @vmiklos [4129](https://github.com/nextcloud/richdocuments/pull/4129)
+- `startPresentation` URL parameter @elzody [#4209](https://github.com/nextcloud/richdocuments/pull/4209)
+- Electronic signing, add settings for eIDEasy @vmiklos [#4328](https://github.com/nextcloud/richdocuments/pull/4328)
+- Insert text and images generated with nextcloud assistant @elzody [#4333](https://github.com/nextcloud/richdocuments/pull/4333)
+- Add Template and pages/numbers/keynote mimetypes @juliusknorr [#4350](https://github.com/nextcloud/richdocuments/pull/4350)
+- Add another option for otf font mimetypes @juliusknorr [#4368](https://github.com/nextcloud/richdocuments/pull/4368)
+
 
 ### Fixed
 
-- fix: Do not set a guest name on actual users [#3950](https://github.com/nextcloud/richdocuments/pull/3950)
-- fix: Fix missing conflicts on pdf templating @juliushaertl [#3949](https://github.com/nextcloud/richdocuments/pull/3949)
+- Catch InvalidFieldTypeException @juliusknorr [#3956](https://github.com/nextcloud/richdocuments/pull/3956)
+- Check for mimetype before processing new file from template @juliusknorr [#3958](https://github.com/nextcloud/richdocuments/pull/3958)
+- Catch parsing errors or null doc structure @juliusknorr [#3967](https://github.com/nextcloud/richdocuments/pull/3967)
+- Dispatch event instead of hook for audit logging @juliusknorr [#3969](https://github.com/nextcloud/richdocuments/pull/3969)
+- Pressing `Enter` submits guest name input @elzody [#3992](https://github.com/nextcloud/richdocuments/pull/3992)
+- Failed token generation on public shares @elzody [#4030](https://github.com/nextcloud/richdocuments/pull/4030)
+- Use proper file id for direct editing @juliusknorr [#4101](https://github.com/nextcloud/richdocuments/pull/4101)
+- Use correct save path when renaming @elzody [#4378](https://github.com/nextcloud/richdocuments/pull/4378)
+- Proper messages to mention response @juliusknorr [#4102](https://github.com/nextcloud/richdocuments/pull/4102)
+- Use autocomplete api for mentions @elzody [#4210](https://github.com/nextcloud/richdocuments/pull/4210)
+- Use new db types constants @elzody [#4230](https://github.com/nextcloud/richdocuments/pull/4230)
+- Update federated-editing.md @maximelehericy [#4251](https://github.com/nextcloud/richdocuments/pull/4251)
+- Apply viewer wrapper as we do it in text @juliusknorr [#4278](https://github.com/nextcloud/richdocuments/pull/4278)
+- Properly get empty template for direct editing @juliusknorr [#4335](https://github.com/nextcloud/richdocuments/pull/4335)
+- Notifier::prepare() threw \InvalidArgumentException @nickvergessen [#4353](https://github.com/nextcloud/richdocuments/pull/4353)
+- Skip errors that may interrupt file creation @juliusknorr [#4360](https://github.com/nextcloud/richdocuments/pull/4360)
+- Apply proper default timezone for watermarks @juliusknorr [#4366](https://github.com/nextcloud/richdocuments/pull/4366)
 
 ### Other
-
-- feat: implement PdfService using mikehaertl/php-pdftk [#3947](https://github.com/nextcloud/richdocuments/pull/3947)
-
-## 8.5.0-beta.2
-
-### Fixed
-
-* Do not ask for guest name on read only pdfs @juliushaertl [#3832](https://github.com/nextcloud/richdocuments/pull/3832)
-* Allow passing css var to change Collabora logo color @elzody [#3840](https://github.com/nextcloud/richdocuments/pull/3840)
-* Add API docs for form extraction and filling API @juliushaertl [#3868](https://github.com/nextcloud/richdocuments/pull/3868)
-* Run cypress against code nightly @juliushaertl [#3869](https://github.com/nextcloud/richdocuments/pull/3869)
-* Remove unnecessary files from release build @juliushaertl [#3870](https://github.com/nextcloud/richdocuments/pull/3870)
-* Show PDF even when download hidden on public share @elzody [#3872](https://github.com/nextcloud/richdocuments/pull/3872)
-* Add check if collabora supports template filling @juliushaertl [#3875](https://github.com/nextcloud/richdocuments/pull/3875)
-* Properly split with multi-collabora matrix @juliushaertl [#3890](https://github.com/nextcloud/richdocuments/pull/3890)
-* Guest username not picked up the second time loading a share link @elzody [#3910](https://github.com/nextcloud/richdocuments/pull/3910)
-* Allow double click in image picker @eszkadev [#3927](https://github.com/nextcloud/richdocuments/pull/3927)
-* properly send custom logo to collabora @elzody [#3928](https://github.com/nextcloud/richdocuments/pull/3928)
-* Cache `extractFields` response from Collabora @elzody [#3932](https://github.com/nextcloud/richdocuments/pull/3932)
-* Bring back federated editing in viewer iframe @juliushaertl [#3940](https://github.com/nextcloud/richdocuments/pull/3940)
-* Switch to new API to set volatile user to prevent persisting it in any case @juliushaertl [#3833](https://github.com/nextcloud/richdocuments/pull/3833)
-
-### Other
-
-* Bump eslint-plugin-cypress from 3.3.0 to 3.4.0 @dependabot [#3841](https://github.com/nextcloud/richdocuments/pull/3841)
-* Bump typescript from 5.5.3 to 5.5.4 @dependabot [#3842](https://github.com/nextcloud/richdocuments/pull/3842)
-* Bump @nextcloud/paths from 2.2.0 to 2.2.1 @dependabot [#3843](https://github.com/nextcloud/richdocuments/pull/3843)
-* Bump @nextcloud/vue from 8.14.0 to 8.15.0 @dependabot [#3844](https://github.com/nextcloud/richdocuments/pull/3844)
-* Bump @nextcloud/files from 3.6.0 to 3.7.0 @dependabot [#3845](https://github.com/nextcloud/richdocuments/pull/3845)
-* Update nextcloud/ocp dependency @nextcloud-command [#3848](https://github.com/nextcloud/richdocuments/pull/3848)
-* Bump fast-xml-parser from 4.3.6 to 4.4.1 @dependabot [#3850](https://github.com/nextcloud/richdocuments/pull/3850)
-* Update nextcloud/ocp dependency @nextcloud-command [#3923](https://github.com/nextcloud/richdocuments/pull/3923)
-* Adjust testing matrix for Nextcloud 30 on stable30 @nickvergessen [#3904](https://github.com/nextcloud/richdocuments/pull/3904)
-* Bump @nextcloud/vue from 8.15.1 to 8.16.0 @dependabot [#3893](https://github.com/nextcloud/richdocuments/pull/3893)
-* Update nextcloud/ocp dependency @nextcloud-command [#3876](https://github.com/nextcloud/richdocuments/pull/3876)
-* Bump @nextcloud/vue from 8.15.0 to 8.15.1 @dependabot [#3873](https://github.com/nextcloud/richdocuments/pull/3873)
-* Bump cypress from 13.13.1 to 13.13.2 @dependabot [#3874](https://github.com/nextcloud/richdocuments/pull/3874)
+- Rector @juliusknorr [#4045](https://github.com/nextcloud/richdocuments/pull/4045)
 
 ## 8.5.0-beta.1
 
