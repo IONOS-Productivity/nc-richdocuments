@@ -88,6 +88,27 @@ class RegisterTemplateFileCreatorListenerTest extends TestCase {
 		$listener->handle($event);
 	}
 
+	public function testHandleDoesNotRegisterForPublicShareVisitor() {
+		$event = $this->createMock(RegisterTemplateCreatorEvent::class);
+		$event->method('getTemplateManager')->willReturn($this->templateManager);
+		// No logged-in user, as on a public share link. Both group checks report
+		// false in that case, so creation must not be offered.
+		$this->permissionManager->method('loggedInUser')->willReturn(null);
+		$this->permissionManager->method('isEnabledForUser')->willReturn(false);
+		$this->permissionManager->method('userCanEdit')->willReturn(false);
+		$this->capabilitiesService->method('getCapabilities')->willReturn(['something']);
+
+		$listener = new RegisterTemplateFileCreatorListener(
+			$this->l10n,
+			$this->config,
+			$this->appManager,
+			$this->capabilitiesService,
+			$this->permissionManager
+		);
+		$this->templateManager->expects($this->never())->method('registerTemplateFileCreator');
+		$listener->handle($event);
+	}
+
 	public function testHandleDoesNotRegisterIfUserCannotEdit() {
 		$event = $this->createMock(RegisterTemplateCreatorEvent::class);
 		$event->method('getTemplateManager')->willReturn($this->templateManager);

@@ -39,9 +39,12 @@ class RegisterTemplateFileCreatorListener implements IEventListener {
 			return;
 		}
 
+		// IONOS: also gate the anonymous case. Both checks return false when there is
+		// no logged-in user, so skipping them for public share visitors offered
+		// document creation to everybody holding a share link.
 		$user = $this->permissionManager->loggedInUser();
 		$userCanCreate = $this->permissionManager->isEnabledForUser($user) && $this->permissionManager->userCanEdit($user);
-		if ($user && !$userCanCreate) {
+		if (!$userCanCreate) {
 			return;
 		}
 
